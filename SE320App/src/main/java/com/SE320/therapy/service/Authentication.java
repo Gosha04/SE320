@@ -1,37 +1,37 @@
 package com.SE320.therapy.service;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.spec.InvalidKeySpecException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.Base64;
 import java.util.UUID;
 
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
+import javax.sql.DataSource;
 
-import com.SE320.therapy.Objects.UserType;
-import com.SE320.therapy.repository.DataManager;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 
+import com.SE320.therapy.objects.UserType;
+
+@Service
 public class Authentication {
     private static final String REGISTER_USER_SQL =
             "INSERT INTO users (id, user_type, first_name, last_name, username, email, password_hash, phone_number) "
                     + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-    private static final int SALT_BYTES = 16;
-    private static final int HASH_BYTES = 32;
-    private static final int PBKDF2_ITERATIONS = 65536;
+    private static final String GET_PASSWORD_SQL =
+            "SELECT users.password_hash FROM users WHERE users.username = ?";
 
-    private final DataManager dataManager;
+    private final DataSource dataSource;
+    private final PasswordEncoder passwordEncoder;
 
-    public Authentication() {
-        this.dataManager = DataManager.getInstance();
+    public Authentication(DataSource dataSource, PasswordEncoder passwordEncoder) {
+        this.dataSource = dataSource;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public Connection getConnection() throws SQLException {
-        return dataManager.getConnection();
+        return dataSource.getConnection();
     }
 
     public void registerUser(UserType userType, String firstName, String lastName,
@@ -39,7 +39,7 @@ public class Authentication {
         UUID userId = UUID.randomUUID();
         String passwordHash = hashPassword(password);
 
-        try (Connection connection = dataManager.getConnection();
+        try (Connection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(REGISTER_USER_SQL)) {
             statement.setString(1, userId.toString());
             statement.setString(2, userType.name());
@@ -60,20 +60,27 @@ public class Authentication {
         }
     }
 
-    private String hashPassword(String password) { // Learned on Baeldung
-        byte[] salt = new byte[SALT_BYTES];
-        SecureRandom secureRandom = new SecureRandom();
-        secureRandom.nextBytes(salt);
-
-        PBEKeySpec spec = new PBEKeySpec(password.toCharArray(), salt, PBKDF2_ITERATIONS, HASH_BYTES * 8);
-        try {
-            SecretKeyFactory secretKeyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-            byte[] hash = secretKeyFactory.generateSecret(spec).getEncoded();
-            return Base64.getEncoder().encodeToString(salt) + ":" + Base64.getEncoder().encodeToString(hash);
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            throw new IllegalStateException("Unable to hash password.", e);
-        } finally {
-            spec.clearPassword();
+    public boolean authenticate(String username, String rawPassword) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(GET_PASSWORD_SQL)) {
+            statement.setString(1, username);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    return false;
+                }
+                String storedHash = resultSet.getString("password_hash");
+                return checkPassword(rawPassword, storedHash);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Unable to get password from database.", e);
         }
+    }
+
+    private String hashPassword(String rawPassword) {
+        return passwordEncoder.encode(rawPassword);
+    }
+
+    private boolean checkPassword(String rawPassword, String storedHash) {
+        return passwordEncoder.matches(rawPassword, storedHash);
     }
 }
