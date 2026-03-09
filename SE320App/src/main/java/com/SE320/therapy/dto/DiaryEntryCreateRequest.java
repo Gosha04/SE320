@@ -1,49 +1,22 @@
-package com.SE320.therapy.entity;
+package com.SE320.therapy.dto;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
-public class DiaryEntry {
-    private UUID id;
-    private UUID userId;
+public class DiaryEntryCreateRequest {
     private String situation;
     private String automaticThought;
     private String alternativeThought;
     private int moodBefore;
     private int moodAfter;
-    private LocalDateTime createdAt;
-    private boolean deleted;
 
-    public DiaryEntry() {
+    public DiaryEntryCreateRequest() {
     }
 
-    public DiaryEntry(UUID id, UUID userId, String situation, String automaticThought,
-                      String alternativeThought, int moodBefore, int moodAfter,
-                      LocalDateTime createdAt, boolean deleted) {
-        this.id = id;
-        this.userId = userId;
+    public DiaryEntryCreateRequest(String situation, String automaticThought,
+                                   String alternativeThought, int moodBefore, int moodAfter) {
         this.situation = situation;
         this.automaticThought = automaticThought;
         this.alternativeThought = alternativeThought;
         this.moodBefore = moodBefore;
         this.moodAfter = moodAfter;
-        this.createdAt = createdAt;
-        this.deleted = deleted;
-    }
-    public UUID getId() {
-        return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
-    public UUID getUserId() {
-        return userId;
-    }
-
-    public void setUserId(UUID userId) {
-        this.userId = userId;
     }
 
     public String getSituation() {
@@ -84,21 +57,5 @@ public class DiaryEntry {
 
     public void setMoodAfter(int moodAfter) {
         this.moodAfter = moodAfter;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public boolean isDeleted() {
-        return deleted;
-    }
-
-    public void setDeleted(boolean deleted) {
-        this.deleted = deleted;
     }
 }
