@@ -1,13 +1,13 @@
 package com.SE320.therapy.objects;
 
+import java.util.UUID;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-
-import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -30,24 +30,23 @@ public class User {
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(name = "phone_number")
+    @Column(name = "phone_number", unique = true)
     private Integer phoneNumber;
+
+    @Column(name = "password_hash", nullable = false)
+    private String passwordHash;
 
     protected User() {}
 
     public User(UUID id, UserType userType, String firstName, String lastName,
-                String email, Integer phoneNumber) {
+                String email, Integer phoneNumber, String passwordHash) {
         this.id = id;
         this.userType = userType;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.phoneNumber = phoneNumber;
-    }
-
-    public User(UserType userType, String firstName, String lastName,
-                String email, Integer phoneNumber) {
-        this(UUID.randomUUID(), userType, firstName, lastName, email, phoneNumber);
+        this.passwordHash = passwordHash;
     }
 
     // getters and setters
@@ -98,5 +97,9 @@ public class User {
 
     public void setPhoneNumber(Integer phoneNumber) {
         this.phoneNumber = phoneNumber;
+    }
+
+    protected void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 }
