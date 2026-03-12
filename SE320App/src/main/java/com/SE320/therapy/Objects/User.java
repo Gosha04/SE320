@@ -12,6 +12,8 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "users")
 public class User {
+    public final boolean OFFLINE = false;
+    public final boolean ONLINE = true;
 
     @Id
     @Column(name = "id", nullable = false, updatable = false)
@@ -36,7 +38,8 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    protected User() {}
+    @Column(name = "status")
+    private boolean online;
 
     public User(UUID id, UserType userType, String firstName, String lastName,
                 String email, Integer phoneNumber, String passwordHash) {
@@ -47,6 +50,7 @@ public class User {
         this.email = email;
         this.phoneNumber = phoneNumber;
         this.passwordHash = passwordHash;
+        this.online = false;
     }
 
     // getters and setters
@@ -79,6 +83,10 @@ public class User {
         return phoneNumber;
     }
 
+    public boolean getOnline() {
+        return online;
+    }
+
     public void setUserType(UserType userType) {
         this.userType = userType;
     }
@@ -97,6 +105,10 @@ public class User {
 
     public void setPhoneNumber(Integer phoneNumber) {
         this.phoneNumber = phoneNumber;
+    }
+
+    public void setOnline(boolean bool) {
+        this.online = bool;
     }
 
     protected void setPasswordHash(String passwordHash) {

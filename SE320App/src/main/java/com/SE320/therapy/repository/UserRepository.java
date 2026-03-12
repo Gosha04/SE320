@@ -13,6 +13,7 @@ import com.SE320.therapy.objects.User;
 public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("select u.passwordHash from User where u.email = :email")
     Optional<String> findPasswordByEmail(String email);
-}
 
+    Optional<User> findByEmail(String email);
+}
 
