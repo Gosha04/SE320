@@ -3,17 +3,21 @@ package com.SE320.therapy.cli.commands;
 import com.SE320.therapy.cli.commands.Command;
 import com.SE320.therapy.dto.DiaryEntryCreateRequest;
 import com.SE320.therapy.service.DiaryService;
+import org.springframework.stereotype.Component;
 
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.function.Supplier;
 
+@Component
 public class NewDiaryEntryCommand implements Command {
+
     private final DiaryService diaryService;
     private final Scanner scanner;
     private final Supplier<UUID> currentUserIdSupplier;
 
-    public NewDiaryEntryCommand(DiaryService diaryService, Scanner scanner,
+    public NewDiaryEntryCommand(DiaryService diaryService,
+                                Scanner scanner,
                                 Supplier<UUID> currentUserIdSupplier) {
         this.diaryService = diaryService;
         this.scanner = scanner;

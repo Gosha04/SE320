@@ -30,6 +30,7 @@ public class DiaryEntry {
         this.createdAt = createdAt;
         this.deleted = deleted;
     }
+
     public UUID getId() {
         return id;
     }

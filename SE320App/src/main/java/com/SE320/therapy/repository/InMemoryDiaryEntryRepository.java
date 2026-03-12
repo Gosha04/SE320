@@ -1,11 +1,13 @@
 package com.SE320.therapy.repository;
 
 import com.SE320.therapy.entity.DiaryEntry;
+import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Repository
 public class InMemoryDiaryEntryRepository implements DiaryEntryRepository {
     private final List<DiaryEntry> entries = new ArrayList<>();
 
