@@ -5,15 +5,18 @@ import com.SE320.therapy.dto.DiaryEntrySummary;
 import com.SE320.therapy.dto.DiaryInsights;
 import com.SE320.therapy.entity.DiaryEntry;
 import com.SE320.therapy.repository.DiaryEntryRepository;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Service
 public class DiaryServiceImpl implements DiaryService {
+
     private final DiaryEntryRepository diaryEntryRepository;
-    
+
     public DiaryServiceImpl(DiaryEntryRepository diaryEntryRepository) {
         this.diaryEntryRepository = diaryEntryRepository;
     }
@@ -59,7 +62,7 @@ public class DiaryServiceImpl implements DiaryService {
 
         return summaries;
     }
-    
+
     @Override
     public DiaryInsights getInsights(UUID userId) {
         List<DiaryEntry> entries = diaryEntryRepository.findByUserId(userId);
@@ -106,6 +109,4 @@ public class DiaryServiceImpl implements DiaryService {
             throw new IllegalArgumentException("Mood after must be between 1 and 10.");
         }
     }
-
 }
-

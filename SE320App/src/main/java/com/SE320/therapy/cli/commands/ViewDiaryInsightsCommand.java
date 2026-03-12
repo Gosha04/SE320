@@ -3,15 +3,19 @@ package com.SE320.therapy.cli.commands;
 import com.SE320.therapy.cli.commands.Command;
 import com.SE320.therapy.dto.DiaryInsights;
 import com.SE320.therapy.service.DiaryService;
+import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 import java.util.function.Supplier;
 
+@Component
 public class ViewDiaryInsightsCommand implements Command {
+
     private final DiaryService diaryService;
     private final Supplier<UUID> currentUserIdSupplier;
 
-    public ViewDiaryInsightsCommand(DiaryService diaryService, Supplier<UUID> currentUserIdSupplier) {
+    public ViewDiaryInsightsCommand(DiaryService diaryService,
+                                    Supplier<UUID> currentUserIdSupplier) {
         this.diaryService = diaryService;
         this.currentUserIdSupplier = currentUserIdSupplier;
     }

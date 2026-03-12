@@ -18,11 +18,23 @@ public class DiaryInsights {
         return totalEntries;
     }
 
+    public void setTotalEntries(int totalEntries) {
+        this.totalEntries = totalEntries;
+    }
+
     public double getAverageMoodImprovement() {
         return averageMoodImprovement;
     }
 
+    public void setAverageMoodImprovement(double averageMoodImprovement) {
+        this.averageMoodImprovement = averageMoodImprovement;
+    }
+
     public int getBestMoodImprovement() {
         return bestMoodImprovement;
+    }
+
+    public void setBestMoodImprovement(int bestMoodImprovement) {
+        this.bestMoodImprovement = bestMoodImprovement;
     }
 }
