@@ -114,4 +114,8 @@ public class User {
     protected void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
     }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
 }
