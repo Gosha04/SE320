@@ -1,6 +1,8 @@
 package com.SE320.therapy.service;
 
 import com.SE320.therapy.dto.DiaryEntryCreateRequest;
+import com.SE320.therapy.dto.DiaryEntryDetail;
+import com.SE320.therapy.dto.DiaryEntryResponse;
 import com.SE320.therapy.dto.DiaryEntrySummary;
 import com.SE320.therapy.dto.DiaryInsights;
 import com.SE320.therapy.entity.DiaryEntry;
@@ -22,7 +24,7 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     @Override
-    public void createEntry(UUID userId, DiaryEntryCreateRequest request) {
+    public DiaryEntryResponse createEntry(UUID userId, DiaryEntryCreateRequest request) {
         validateRequest(request);
 
         DiaryEntry entry = new DiaryEntry(
@@ -38,6 +40,12 @@ public class DiaryServiceImpl implements DiaryService {
         );
 
         diaryEntryRepository.save(entry);
+
+        return new DiaryEntryResponse(
+                entry.getId(),
+                "Diary entry created successfully.",
+                entry.getCreatedAt()
+        );
     }
 
     @Override
@@ -61,6 +69,37 @@ public class DiaryServiceImpl implements DiaryService {
         }
 
         return summaries;
+    }
+
+    @Override
+    public DiaryEntryDetail getEntryDetail(UUID entryId) {
+        DiaryEntry entry = diaryEntryRepository.findById(entryId);
+
+        if (entry == null || entry.isDeleted()) {
+            throw new IllegalArgumentException("Diary entry not found.");
+        }
+
+        return new DiaryEntryDetail(
+                entry.getId(),
+                entry.getUserId(),
+                entry.getSituation(),
+                entry.getAutomaticThought(),
+                entry.getAlternativeThought(),
+                entry.getMoodBefore(),
+                entry.getMoodAfter(),
+                entry.getCreatedAt()
+        );
+    }
+
+    @Override
+    public void deleteEntry(UUID entryId) {
+        DiaryEntry entry = diaryEntryRepository.findById(entryId);
+
+        if (entry == null || entry.isDeleted()) {
+            throw new IllegalArgumentException("Diary entry not found.");
+        }
+
+        entry.setDeleted(true);
     }
 
     @Override

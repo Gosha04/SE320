@@ -8,4 +8,5 @@ import java.util.UUID;
 public interface DiaryEntryRepository {
     DiaryEntry save(DiaryEntry entry);
     List<DiaryEntry> findByUserId(UUID userId);
+    DiaryEntry findById(UUID entryId);
 }
