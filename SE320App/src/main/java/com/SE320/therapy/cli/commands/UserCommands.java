@@ -4,6 +4,7 @@ import java.util.Locale;
 import java.util.Scanner;
 import java.util.UUID;
 
+import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.SE320.therapy.controller.UserController;
@@ -14,6 +15,7 @@ import com.SE320.therapy.dto.UserResponse;
 import com.SE320.therapy.objects.UserType;
 import com.SE320.therapy.service.AuthResponse;
 
+@Component
 public class UserCommands implements Command {
     private final UserController userController;
     private final Scanner scanner;

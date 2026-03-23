@@ -8,6 +8,7 @@
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/cli/commands/ViewDiaryInsightsCommand.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/cli/commands/ViewSessionHistoryCommand.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/cli/commands/ViewSessionLibraryCommand.java
+/Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/config/CliConfig.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/config/SecurityConfig.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/controller/SessionController.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/controller/UserController.java

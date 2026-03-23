@@ -40,6 +40,9 @@ public class User {
 
     @Column(name = "status")
     private boolean online;
+    
+    @Column(name = "username")
+    private String username;
 
     public User(UUID id, UserType userType, String firstName, String lastName,
                 String email, Integer phoneNumber, String passwordHash) {
@@ -51,6 +54,11 @@ public class User {
         this.phoneNumber = phoneNumber;
         this.passwordHash = passwordHash;
         this.online = false;
+        this.username = email;
+    }
+
+    public User() {
+
     }
 
     // getters and setters
