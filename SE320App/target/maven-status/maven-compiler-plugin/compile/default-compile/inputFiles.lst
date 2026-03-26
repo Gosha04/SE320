@@ -1,6 +1,7 @@
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/App.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/cli/CbtSessionMenu.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/cli/commands/Command.java
+/Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/cli/commands/Menu.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/cli/commands/NewDiaryEntryCommand.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/cli/commands/StartNewSessionCommand.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/cli/commands/UserCommands.java

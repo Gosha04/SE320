@@ -6,10 +6,8 @@ import java.util.function.Supplier;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 
-import com.SE320.therapy.service.AuthenticatedUser;
+import com.SE320.therapy.cli.commands.UserCommands;
 
 @Configuration
 public class CliConfig {
@@ -20,19 +18,7 @@ public class CliConfig {
     }
 
     @Bean
-    Supplier<UUID> currentUserIdSupplier() {
-        return () -> {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication == null) {
-                return null;
-            }
-
-            Object principal = authentication.getPrincipal();
-            if (principal instanceof AuthenticatedUser authenticatedUser) {
-                return authenticatedUser.id();
-            }
-
-            return null;
-        };
+    Supplier<UUID> currentUserIdSupplier(UserCommands userCommands) {
+        return userCommands::getCurrentUserId;
     }
 }
