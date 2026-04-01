@@ -2,21 +2,25 @@ package com.SE320.therapy.service;
 
 import com.SE320.therapy.entity.CBTSession;
 import com.SE320.therapy.entity.SessionStatus;
+import com.SE320.therapy.repository.SessionRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class SessionService {
+
+    private final SessionRepository sessionRepository;
 
     private final List<String> sessionLibrary = List.of(
             "Thought Record",
             "Behavioral Activation",
             "Cognitive Restructuring");
 
-    private final List<CBTSession> sessionHistory = new ArrayList<>();
+    public SessionService(SessionRepository sessionRepository) {
+        this.sessionRepository = sessionRepository;
+    }
 
     public List<String> viewSessionLibrary() {
         return sessionLibrary;
@@ -26,25 +30,22 @@ public class SessionService {
         if (userId == null || userId.isBlank()) {
             throw new IllegalArgumentException("User ID is required.");
         }
+
         if (sessionType == null || sessionType.isBlank()) {
             throw new IllegalArgumentException("Session type is required.");
         }
 
-        for (CBTSession session : sessionHistory) {
-            if (session.getUserId().equals(userId) && session.getStatus() == SessionStatus.ACTIVE) {
-                throw new IllegalStateException("User already has an active session.");
-            }
+        if (sessionRepository.existsByUserIdAndStatus(userId, SessionStatus.ACTIVE)) {
+            throw new IllegalStateException("User already has an active session.");
         }
 
         CBTSession session = new CBTSession();
-        session.setSessionId((long) (sessionHistory.size() + 1));
         session.setUserId(userId);
         session.setSessionType(sessionType);
         session.setStatus(SessionStatus.ACTIVE);
         session.setStartedAt(LocalDateTime.now());
 
-        sessionHistory.add(session);
-        return session;
+        return sessionRepository.save(session);
     }
 
     public CBTSession continueSession(String userId, Long sessionId) {
@@ -56,18 +57,15 @@ public class SessionService {
             throw new IllegalArgumentException("Session ID is required.");
         }
 
-        for (CBTSession session : sessionHistory) {
-            if (session.getSessionId().equals(sessionId) && session.getUserId().equals(userId)) {
-                if (session.getStatus() == SessionStatus.ENDED) {
-                    throw new IllegalStateException("This session has already ended.");
-                }
+        CBTSession session = sessionRepository.findBySessionIdAndUserId(sessionId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Session not found."));
 
-                session.setStatus(SessionStatus.ACTIVE);
-                return session;
-            }
+        if (session.getStatus() == SessionStatus.ENDED) {
+            throw new IllegalStateException("This session has already ended.");
         }
 
-        throw new IllegalArgumentException("Session not found.");
+        session.setStatus(SessionStatus.ACTIVE);
+        return sessionRepository.save(session);
     }
 
     public void endSession(String userId, Long sessionId) {
@@ -79,19 +77,16 @@ public class SessionService {
             throw new IllegalArgumentException("Session ID is required.");
         }
 
-        for (CBTSession session : sessionHistory) {
-            if (session.getSessionId().equals(sessionId) && session.getUserId().equals(userId)) {
-                if (session.getStatus() == SessionStatus.ENDED) {
-                    throw new IllegalStateException("This session has already ended.");
-                }
+        CBTSession session = sessionRepository.findBySessionIdAndUserId(sessionId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Session not found."));
 
-                session.setStatus(SessionStatus.ENDED);
-                session.setEndedAt(LocalDateTime.now());
-                return;
-            }
+        if (session.getStatus() == SessionStatus.ENDED) {
+            throw new IllegalStateException("This session has already ended.");
         }
 
-        throw new IllegalArgumentException("Session not found.");
+        session.setStatus(SessionStatus.ENDED);
+        session.setEndedAt(LocalDateTime.now());
+        sessionRepository.save(session);
     }
 
     public List<CBTSession> viewSessionHistory(String userId) {
@@ -99,14 +94,6 @@ public class SessionService {
             throw new IllegalArgumentException("User ID is required.");
         }
 
-        List<CBTSession> userSessions = new ArrayList<>();
-
-        for (CBTSession session : sessionHistory) {
-            if (session.getUserId().equals(userId)) {
-                userSessions.add(session);
-            }
-        }
-
-        return userSessions;
+        return sessionRepository.findByUserId(userId);
     }
 }

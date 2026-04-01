@@ -1,12 +1,29 @@
 package com.SE320.therapy.entity;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
 import java.time.LocalDateTime;
 
+@Entity
+@Table(name = "cbt_sessions")
 public class CBTSession {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long sessionId;
+
     private String userId;
     private String sessionType;
+
+    @Enumerated(EnumType.STRING)
     private SessionStatus status;
+
     private LocalDateTime startedAt;
     private LocalDateTime endedAt;
 

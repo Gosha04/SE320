@@ -2,11 +2,11 @@ package com.SE320.therapy.controller;
 
 import com.SE320.therapy.entity.CBTSession;
 import com.SE320.therapy.service.SessionService;
-//import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Controller;
 
 import java.util.List;
 
-//@Controller
+@Controller
 public class SessionController {
 
     private final SessionService sessionService;
@@ -34,5 +34,4 @@ public class SessionController {
     public void endSession(String userId, Long sessionId) {
         sessionService.endSession(userId, sessionId);
     }
-
 }
