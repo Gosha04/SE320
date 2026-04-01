@@ -2,15 +2,13 @@ package com.SE320.therapy.service;
 
 import com.SE320.therapy.entity.CBTSession;
 import com.SE320.therapy.entity.SessionStatus;
-
-// // spring framework imports
-// import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-//@Service
+@Service
 public class SessionService {
 
     private final List<String> sessionLibrary = List.of(
@@ -34,7 +32,7 @@ public class SessionService {
 
         for (CBTSession session : sessionHistory) {
             if (session.getUserId().equals(userId) && session.getStatus() == SessionStatus.ACTIVE) {
-                throw new IllegalStateException("This session has already ended.");
+                throw new IllegalStateException("User already has an active session.");
             }
         }
 
@@ -86,11 +84,11 @@ public class SessionService {
                 if (session.getStatus() == SessionStatus.ENDED) {
                     throw new IllegalStateException("This session has already ended.");
                 }
-            }
 
-            session.setStatus(SessionStatus.ENDED);
-            session.setEndedAt(LocalDateTime.now());
-            return;
+                session.setStatus(SessionStatus.ENDED);
+                session.setEndedAt(LocalDateTime.now());
+                return;
+            }
         }
 
         throw new IllegalArgumentException("Session not found.");
