@@ -1,14 +1,19 @@
 package com.SE320.therapy.cli.commands;
 
 import com.SE320.therapy.controller.SessionController;
-import com.SE320.therapy.service.SessionService;
+import com.SE320.therapy.entity.CBTSession;
+import com.SE320.therapy.entity.SessionStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.*;
 
 public class ViewSessionHistoryCommandTest {
 
@@ -16,8 +21,7 @@ public class ViewSessionHistoryCommandTest {
 
     @BeforeEach
     void setUp() {
-        SessionService sessionService = new SessionService();
-        sessionController = new SessionController(sessionService);
+        sessionController = mock(SessionController.class);
     }
 
     private String runCommand(String userId) {
@@ -38,6 +42,8 @@ public class ViewSessionHistoryCommandTest {
 
     @Test
     void execute_displaysMessage_whenNoSessionHistoryExists() {
+        when(sessionController.viewSessionHistory("user1")).thenReturn(Collections.emptyList());
+
         String output = runCommand("user1");
 
         assertTrue(output.contains("--- Session History ---"));
@@ -46,8 +52,15 @@ public class ViewSessionHistoryCommandTest {
 
     @Test
     void execute_displaysSessionHistory_whenSessionsExist() {
-        sessionController.startNewSession("user1", "Thought Record");
-        sessionController.endSession("user1", 1L);
+        CBTSession session = new CBTSession();
+        session.setSessionId(1L);
+        session.setUserId("user1");
+        session.setSessionType("Thought Record");
+        session.setStatus(SessionStatus.ENDED);
+        session.setStartedAt(LocalDateTime.now().minusMinutes(15));
+        session.setEndedAt(LocalDateTime.now());
+
+        when(sessionController.viewSessionHistory("user1")).thenReturn(List.of(session));
 
         String output = runCommand("user1");
 
@@ -62,6 +75,9 @@ public class ViewSessionHistoryCommandTest {
 
     @Test
     void execute_showsError_whenUserIdIsInvalid() {
+        when(sessionController.viewSessionHistory(""))
+                .thenThrow(new IllegalArgumentException("User ID is required."));
+
         String output = runCommand("");
 
         assertTrue(output.contains("User ID is required."));

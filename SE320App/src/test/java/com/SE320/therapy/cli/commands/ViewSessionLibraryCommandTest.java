@@ -1,14 +1,15 @@
 package com.SE320.therapy.cli.commands;
 
 import com.SE320.therapy.controller.SessionController;
-import com.SE320.therapy.service.SessionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.*;
 
 public class ViewSessionLibraryCommandTest {
 
@@ -16,8 +17,13 @@ public class ViewSessionLibraryCommandTest {
 
     @BeforeEach
     void setUp() {
-        SessionService sessionService = new SessionService();
-        sessionController = new SessionController(sessionService);
+        sessionController = mock(SessionController.class);
+
+        when(sessionController.viewSessionLibrary()).thenReturn(List.of(
+                "Thought Record",
+                "Behavioral Activation",
+                "Cognitive Restructuring"
+        ));
     }
 
     private String runCommand() {

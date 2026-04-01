@@ -1,7 +1,8 @@
 package com.SE320.therapy.cli.commands;
 
 import com.SE320.therapy.controller.SessionController;
-import com.SE320.therapy.service.SessionService;
+import com.SE320.therapy.entity.CBTSession;
+import com.SE320.therapy.entity.SessionStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -9,20 +10,33 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Scanner;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.*;
 
 public class StartNewSessionCommandTest {
 
-    private SessionService sessionService;
     private SessionController sessionController;
 
     @BeforeEach
     void setUp() {
-        sessionService = new SessionService();
-        sessionController = new SessionController(sessionService);
+        sessionController = mock(SessionController.class);
+
+        when(sessionController.viewSessionLibrary()).thenReturn(List.of(
+                "Thought Record",
+                "Behavioral Activation",
+                "Cognitive Restructuring"
+        ));
+
+        CBTSession session = new CBTSession();
+        session.setSessionId(1L);
+        session.setUserId("user1");
+        session.setSessionType("Thought Record");
+        session.setStatus(SessionStatus.ACTIVE);
+
+        when(sessionController.startNewSession("user1", "Thought Record")).thenReturn(session);
     }
 
     private String runCommand(String input, String userId) {
@@ -54,7 +68,7 @@ public class StartNewSessionCommandTest {
         assertTrue(output.contains("Type: Thought Record"));
         assertTrue(output.contains("Status: ACTIVE"));
 
-        assertEquals(1, sessionService.viewSessionHistory("user1").size());
+        verify(sessionController).startNewSession("user1", "Thought Record");
     }
 
     @Test
@@ -62,6 +76,7 @@ public class StartNewSessionCommandTest {
         String output = runCommand("\n", "user1");
 
         assertTrue(output.contains("Please enter a session number."));
+        verify(sessionController, never()).startNewSession(anyString(), anyString());
     }
 
     @Test
@@ -69,6 +84,7 @@ public class StartNewSessionCommandTest {
         String output = runCommand("abc\n", "user1");
 
         assertTrue(output.contains("Session choice must be a valid number."));
+        verify(sessionController, never()).startNewSession(anyString(), anyString());
     }
 
     @Test
@@ -76,5 +92,6 @@ public class StartNewSessionCommandTest {
         String output = runCommand("99\n", "user1");
 
         assertTrue(output.contains("Please choose a number from the session library."));
+        verify(sessionController, never()).startNewSession(anyString(), anyString());
     }
 }

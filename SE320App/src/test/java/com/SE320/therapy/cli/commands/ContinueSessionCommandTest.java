@@ -1,7 +1,8 @@
 package com.SE320.therapy.cli.commands;
 
 import com.SE320.therapy.controller.SessionController;
-import com.SE320.therapy.service.SessionService;
+import com.SE320.therapy.entity.CBTSession;
+import com.SE320.therapy.entity.SessionStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,18 +13,27 @@ import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.*;
 
 public class ContinueSessionCommandTest {
 
-    private SessionService sessionService;
     private SessionController sessionController;
 
     @BeforeEach
     void setUp() {
-        sessionService = new SessionService();
-        sessionController = new SessionController(sessionService);
+        sessionController = mock(SessionController.class);
 
-        sessionController.startNewSession("user1", "Thought Record");
+        CBTSession session = new CBTSession();
+        session.setSessionId(1L);
+        session.setUserId("user1");
+        session.setSessionType("Thought Record");
+        session.setStatus(SessionStatus.ACTIVE);
+
+        when(sessionController.continueSession("user1", 1L)).thenReturn(session);
+        when(sessionController.continueSession("user1", 99L))
+                .thenThrow(new IllegalArgumentException("Session not found."));
+        when(sessionController.continueSession("otherUser", 1L))
+                .thenThrow(new IllegalArgumentException("Session not found."));
     }
 
     private String runCommand(String input, String userId) {
@@ -61,6 +71,7 @@ public class ContinueSessionCommandTest {
         String output = runCommand("\n", "user1");
 
         assertTrue(output.contains("Session ID cannot be empty."));
+        verify(sessionController, never()).continueSession(anyString(), anyLong());
     }
 
     @Test
@@ -68,6 +79,7 @@ public class ContinueSessionCommandTest {
         String output = runCommand("abc\n", "user1");
 
         assertTrue(output.contains("Session ID must be a valid number."));
+        verify(sessionController, never()).continueSession(anyString(), anyLong());
     }
 
     @Test
