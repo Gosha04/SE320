@@ -2,26 +2,59 @@ package com.SE320.therapy.entity;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-//Must be tagged as entity
+
+import com.SE320.therapy.entity.User;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "diary_entries")
 public class DiaryEntry {
+
+    @Id
+    @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
-    private UUID userId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @Column(name = "situation", nullable = false, columnDefinition = "TEXT")
     private String situation;
+
+    @Column(name = "automatic_thought", nullable = false, columnDefinition = "TEXT")
     private String automaticThought;
+
+    @Column(name = "alternative_thought", nullable = false, columnDefinition = "TEXT")
     private String alternativeThought;
+
+    @Column(name = "mood_before", nullable = false)
     private int moodBefore;
+
+    @Column(name = "mood_after", nullable = false)
     private int moodAfter;
+
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "deleted", nullable = false)
     private boolean deleted;
 
     public DiaryEntry() {
     }
 
-    public DiaryEntry(UUID id, UUID userId, String situation, String automaticThought,
+    public DiaryEntry(UUID id, User user, String situation, String automaticThought,
                       String alternativeThought, int moodBefore, int moodAfter,
                       LocalDateTime createdAt, boolean deleted) {
         this.id = id;
-        this.userId = userId;
+        this.user = user;
         this.situation = situation;
         this.automaticThought = automaticThought;
         this.alternativeThought = alternativeThought;
@@ -29,6 +62,16 @@ public class DiaryEntry {
         this.moodAfter = moodAfter;
         this.createdAt = createdAt;
         this.deleted = deleted;
+    }
+
+    @PrePersist
+    public void prePersist() {
+        if (id == null) {
+            id = UUID.randomUUID();
+        }
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
     }
 
     public UUID getId() {
@@ -39,12 +82,12 @@ public class DiaryEntry {
         this.id = id;
     }
 
-    public UUID getUserId() {
-        return userId;
+    public User getUser() {
+        return user;
     }
 
-    public void setUserId(UUID userId) {
-        this.userId = userId;
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public String getSituation() {
