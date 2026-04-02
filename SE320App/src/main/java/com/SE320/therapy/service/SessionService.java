@@ -4,6 +4,7 @@ import com.SE320.therapy.entity.CBTSession;
 import com.SE320.therapy.objects.SessionStatus;
 
 import org.springframework.stereotype.Service;
+import com.SE320.therapy.repository.SessionRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;

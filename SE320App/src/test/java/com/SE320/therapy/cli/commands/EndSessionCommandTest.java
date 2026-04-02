@@ -2,7 +2,7 @@ package com.SE320.therapy.cli.commands;
 
 import com.SE320.therapy.controller.SessionController;
 import com.SE320.therapy.entity.CBTSession;
-import com.SE320.therapy.entity.SessionStatus;
+import com.SE320.therapy.objects.SessionStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

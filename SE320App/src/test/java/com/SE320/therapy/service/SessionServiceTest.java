@@ -1,7 +1,7 @@
 package com.SE320.therapy.service;
 
 import com.SE320.therapy.entity.CBTSession;
-import com.SE320.therapy.entity.SessionStatus;
+import com.SE320.therapy.objects.SessionStatus;
 import com.SE320.therapy.repository.SessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

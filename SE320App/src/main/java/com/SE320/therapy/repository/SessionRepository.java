@@ -1,7 +1,7 @@
 package com.SE320.therapy.repository;
 
 import com.SE320.therapy.entity.CBTSession;
-import com.SE320.therapy.entity.SessionStatus;
+import com.SE320.therapy.objects.SessionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
