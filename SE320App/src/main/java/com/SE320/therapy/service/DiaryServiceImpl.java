@@ -1,15 +1,12 @@
 package com.SE320.therapy.service;
 
-import com.SE320.therapy.dto.DiaryEntryCreateRequest;
-import com.SE320.therapy.dto.DiaryEntryDetail;
-import com.SE320.therapy.dto.DiaryEntryResponse;
-import com.SE320.therapy.dto.DiaryEntrySummary;
-import com.SE320.therapy.dto.DiaryInsights;
+import com.SE320.therapy.dto.*;
 import com.SE320.therapy.entity.DiaryEntry;
+import com.SE320.therapy.objects.User;
 import com.SE320.therapy.repository.DiaryEntryRepository;
+import com.SE320.therapy.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -18,24 +15,31 @@ import java.util.UUID;
 public class DiaryServiceImpl implements DiaryService {
 
     private final DiaryEntryRepository diaryEntryRepository;
+    private final UserRepository userRepository;
 
-    public DiaryServiceImpl(DiaryEntryRepository diaryEntryRepository) {
+    public DiaryServiceImpl(DiaryEntryRepository diaryEntryRepository,
+                            UserRepository userRepository) {
         this.diaryEntryRepository = diaryEntryRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
     public DiaryEntryResponse createEntry(UUID userId, DiaryEntryCreateRequest request) {
         validateRequest(request);
 
+        // 🔥 get actual User (needed for relationship)
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
+
         DiaryEntry entry = new DiaryEntry(
                 UUID.randomUUID(),
-                userId,
+                user,
                 request.getSituation().trim(),
                 request.getAutomaticThought().trim(),
                 request.getAlternativeThought().trim(),
                 request.getMoodBefore(),
                 request.getMoodAfter(),
-                LocalDateTime.now(),
+                null, // handled by @PrePersist
                 false
         );
 
@@ -50,7 +54,7 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     public List<DiaryEntrySummary> getEntries(UUID userId) {
-        List<DiaryEntry> entries = diaryEntryRepository.findByUserId(userId);
+        List<DiaryEntry> entries = diaryEntryRepository.findByUser_IdAndDeletedFalse(userId);
         List<DiaryEntrySummary> summaries = new ArrayList<>();
 
         for (DiaryEntry entry : entries) {
@@ -73,15 +77,12 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     public DiaryEntryDetail getEntryDetail(UUID entryId) {
-        DiaryEntry entry = diaryEntryRepository.findById(entryId);
-
-        if (entry == null || entry.isDeleted()) {
-            throw new IllegalArgumentException("Diary entry not found.");
-        }
+        DiaryEntry entry = diaryEntryRepository.findByIdAndDeletedFalse(entryId)
+                .orElseThrow(() -> new IllegalArgumentException("Diary entry not found."));
 
         return new DiaryEntryDetail(
                 entry.getId(),
-                entry.getUserId(),
+                entry.getUser().getId(), // 🔥 FIXED
                 entry.getSituation(),
                 entry.getAutomaticThought(),
                 entry.getAlternativeThought(),
@@ -93,18 +94,16 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     public void deleteEntry(UUID entryId) {
-        DiaryEntry entry = diaryEntryRepository.findById(entryId);
-
-        if (entry == null || entry.isDeleted()) {
-            throw new IllegalArgumentException("Diary entry not found.");
-        }
+        DiaryEntry entry = diaryEntryRepository.findByIdAndDeletedFalse(entryId)
+                .orElseThrow(() -> new IllegalArgumentException("Diary entry not found."));
 
         entry.setDeleted(true);
+        diaryEntryRepository.save(entry);
     }
 
     @Override
     public DiaryInsights getInsights(UUID userId) {
-        List<DiaryEntry> entries = diaryEntryRepository.findByUserId(userId);
+        List<DiaryEntry> entries = diaryEntryRepository.findByUser_IdAndDeletedFalse(userId);
 
         if (entries.isEmpty()) {
             return new DiaryInsights(0, 0.0, 0);
