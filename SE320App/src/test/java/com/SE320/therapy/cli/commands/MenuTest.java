@@ -18,9 +18,7 @@ import org.junit.jupiter.api.Test;
 
 import com.SE320.therapy.controller.SessionController;
 import com.SE320.therapy.controller.UserController;
-import com.SE320.therapy.repository.SessionRepository;
 import com.SE320.therapy.service.SessionService;
-import org.mockito.Mockito;
 
 class MenuTest {
 
@@ -262,7 +260,7 @@ class MenuTest {
         private List<String> library = List.of();
 
         private RecordingSessionController() {
-            super(new SessionService(Mockito.mock(SessionRepository.class)));
+            super();
         }
 
         @Override
