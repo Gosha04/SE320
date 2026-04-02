@@ -1,16 +1,15 @@
 package com.SE320.therapy.service;
 
 import com.SE320.therapy.entity.CBTSession;
-import com.SE320.therapy.entity.SessionStatus;
+import com.SE320.therapy.objects.SessionStatus;
 
-// // spring framework imports
-// import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-//@Service
+@Service
 public class SessionService {
 
     private final List<String> sessionLibrary = List.of(

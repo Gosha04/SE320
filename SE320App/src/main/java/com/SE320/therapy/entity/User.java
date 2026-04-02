@@ -1,6 +1,8 @@
-package com.SE320.therapy.objects;
+package com.SE320.therapy.entity;
 
 import java.util.UUID;
+
+import com.SE320.therapy.objects.UserType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -40,6 +42,9 @@ public class User {
 
     @Column(name = "status")
     private boolean online;
+    
+    @Column(name = "username")
+    private String username;
 
     public User(UUID id, UserType userType, String firstName, String lastName,
                 String email, Integer phoneNumber, String passwordHash) {
@@ -51,6 +56,11 @@ public class User {
         this.phoneNumber = phoneNumber;
         this.passwordHash = passwordHash;
         this.online = false;
+        this.username = email;
+    }
+
+    public User() {
+
     }
 
     // getters and setters

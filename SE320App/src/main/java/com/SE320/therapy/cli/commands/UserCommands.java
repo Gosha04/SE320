@@ -4,6 +4,7 @@ import java.util.Locale;
 import java.util.Scanner;
 import java.util.UUID;
 
+import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.SE320.therapy.controller.UserController;
@@ -14,6 +15,7 @@ import com.SE320.therapy.dto.UserResponse;
 import com.SE320.therapy.objects.UserType;
 import com.SE320.therapy.service.AuthResponse;
 
+@Component
 public class UserCommands implements Command {
     private final UserController userController;
     private final Scanner scanner;
@@ -31,32 +33,37 @@ public class UserCommands implements Command {
     public void execute() {
         boolean running = true;
 
+        printMenu();
+
         while (running) {
-            printMenu();
             String choice = scanner.nextLine().trim();
 
-            switch (choice) {
-                case "1" -> handleRegister();
-                case "2" -> handleLogin();
-                case "3" -> handleLogout();
-                case "4" -> handleDelete();
-                case "5" -> printCurrentSession();
-                case "0" -> running = false;
+            switch (choice.toLowerCase()) {
+                case "register" -> handleRegister();
+                case "login" -> handleLogin();
+                case "logout" -> handleLogout();
+                case "delete" -> handleDelete();
+                case "session" -> printCurrentSession();
+                case "help" -> printMenu();
+                case "exit" -> running = false;
                 default -> System.out.println("Please choose a valid menu option.");
             }
         }
     }
 
+    public UUID getCurrentUserId() {
+        return currentUser != null ? currentUser.id() : null;
+    }
+
     private void printMenu() {
         System.out.println();
         System.out.println("=== User Menu ===");
-        System.out.println("1. Register");
-        System.out.println("2. Login");
-        System.out.println("3. Logout");
-        System.out.println("4. Delete account");
-        System.out.println("5. View current session");
-        System.out.println("0. Back");
-        System.out.print("Choose an option: ");
+        System.out.println("register");
+        System.out.println("login");
+        System.out.println("logout");
+        System.out.println("delete (account)");
+        System.out.println("session (information)");
+        System.out.println("exit\n\n");
     }
 
     private void handleRegister() {
