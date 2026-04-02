@@ -1,8 +1,8 @@
 package com.SE320.therapy.service;
 
 import com.SE320.therapy.entity.CBTSession;
-import com.SE320.therapy.entity.SessionStatus;
-import com.SE320.therapy.repository.SessionRepository;
+import com.SE320.therapy.objects.SessionStatus;
+
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;

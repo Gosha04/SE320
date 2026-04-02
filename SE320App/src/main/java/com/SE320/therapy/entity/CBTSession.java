@@ -10,6 +10,8 @@ import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
 
+import com.SE320.therapy.objects.SessionStatus;
+
 @Entity
 @Table(name = "cbt_sessions")
 public class CBTSession {

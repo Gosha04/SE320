@@ -1,4 +1,4 @@
-package com.SE320.therapy.entity;
+package com.SE320.therapy.objects;
 
 public enum SessionStatus {
     ACTIVE,
