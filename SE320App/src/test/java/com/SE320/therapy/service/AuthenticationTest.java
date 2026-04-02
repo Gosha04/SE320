@@ -28,7 +28,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.SE320.therapy.objects.User;
+import com.SE320.therapy.entity.User;
 import com.SE320.therapy.objects.UserType;
 import com.SE320.therapy.repository.UserRepository;
 

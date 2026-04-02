@@ -1,6 +1,8 @@
-package com.SE320.therapy.objects;
+package com.SE320.therapy.entity;
 
 import java.util.UUID;
+
+import com.SE320.therapy.objects.UserType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

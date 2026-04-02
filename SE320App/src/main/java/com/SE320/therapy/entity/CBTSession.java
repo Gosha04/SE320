@@ -2,6 +2,8 @@ package com.SE320.therapy.entity;
 
 import java.time.LocalDateTime;
 
+import com.SE320.therapy.objects.SessionStatus;
+// Misnamed
 public class CBTSession {
     private Long sessionId;
     private String userId;

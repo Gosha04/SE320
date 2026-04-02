@@ -2,7 +2,7 @@ package com.SE320.therapy.entity;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-
+//Must be tagged as entity
 public class DiaryEntry {
     private UUID id;
     private UUID userId;
