@@ -2,7 +2,7 @@ package com.SE320.therapy.service;
 
 import com.SE320.therapy.dto.*;
 import com.SE320.therapy.entity.DiaryEntry;
-import com.SE320.therapy.objects.User;
+import com.SE320.therapy.entity.User;
 import com.SE320.therapy.repository.DiaryEntryRepository;
 import com.SE320.therapy.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -27,7 +27,6 @@ public class DiaryServiceImpl implements DiaryService {
     public DiaryEntryResponse createEntry(UUID userId, DiaryEntryCreateRequest request) {
         validateRequest(request);
 
-        // 🔥 get actual User (needed for relationship)
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
@@ -39,7 +38,7 @@ public class DiaryServiceImpl implements DiaryService {
                 request.getAlternativeThought().trim(),
                 request.getMoodBefore(),
                 request.getMoodAfter(),
-                null, // handled by @PrePersist
+                null,
                 false
         );
 
@@ -82,7 +81,7 @@ public class DiaryServiceImpl implements DiaryService {
 
         return new DiaryEntryDetail(
                 entry.getId(),
-                entry.getUser().getId(), // 🔥 FIXED
+                entry.getUser().getId(),
                 entry.getSituation(),
                 entry.getAutomaticThought(),
                 entry.getAlternativeThought(),

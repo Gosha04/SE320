@@ -3,7 +3,7 @@ package com.SE320.therapy.entity;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.SE320.therapy.objects.User;
+import com.SE320.therapy.entity.User;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
