@@ -54,8 +54,8 @@ class MenuTest {
     void shouldPrintMenu() {
         CountingUserCommands userCommands = new CountingUserCommands();
         Menu menu = createMenu(userCommands, new RecordingSessionController(), new CountingNewDiaryEntryCommand(),
-            new CountingViewDiaryEntriesCommand(), new CountingViewDiaryInsightsCommand(),
-            new FixedUserIdSupplier(null), "auth", "exit");
+                new CountingViewDiaryEntriesCommand(), new CountingViewDiaryInsightsCommand(),
+                new FixedUserIdSupplier(null), "auth", "exit");
 
         menu.execute();
 
@@ -82,7 +82,7 @@ class MenuTest {
         CountingViewDiaryEntriesCommand viewEntries = new CountingViewDiaryEntriesCommand();
         CountingViewDiaryInsightsCommand viewInsights = new CountingViewDiaryInsightsCommand();
         Menu menu = createMenu(new CountingUserCommands(), new RecordingSessionController(), newEntry,
-            viewEntries, viewInsights, new FixedUserIdSupplier(null), "3", "1", "2", "3", "4", "7");
+                viewEntries, viewInsights, new FixedUserIdSupplier(null), "3", "1", "2", "3", "4", "7");
 
         menu.execute();
 
@@ -108,8 +108,8 @@ class MenuTest {
         RecordingSessionController sessionController = new RecordingSessionController();
         sessionController.library = List.of("Thought Challenging", "Breathing Exercise");
         Menu menu = createMenu(new CountingUserCommands(), sessionController, new CountingNewDiaryEntryCommand(),
-            new CountingViewDiaryEntriesCommand(), new CountingViewDiaryInsightsCommand(),
-            new FixedUserIdSupplier(null), "session", "library", "back", "exit");
+                new CountingViewDiaryEntriesCommand(), new CountingViewDiaryInsightsCommand(),
+                new FixedUserIdSupplier(null), "session", "library", "back", "exit");
 
         menu.execute();
 
@@ -125,8 +125,8 @@ class MenuTest {
     void userRequiredForSessionStart() {
         FixedUserIdSupplier currentUserIdSupplier = new FixedUserIdSupplier(null);
         Menu menu = createMenu(new CountingUserCommands(), new RecordingSessionController(),
-            new CountingNewDiaryEntryCommand(), new CountingViewDiaryEntriesCommand(),
-            new CountingViewDiaryInsightsCommand(), currentUserIdSupplier, "session", "start", "back", "exit");
+                new CountingNewDiaryEntryCommand(), new CountingViewDiaryEntriesCommand(),
+                new CountingViewDiaryInsightsCommand(), currentUserIdSupplier, "session", "start", "back", "exit");
 
         menu.execute();
 
@@ -138,8 +138,8 @@ class MenuTest {
     void userRequiredForSessionView() {
         FixedUserIdSupplier currentUserIdSupplier = new FixedUserIdSupplier(null);
         Menu menu = createMenu(new CountingUserCommands(), new RecordingSessionController(),
-            new CountingNewDiaryEntryCommand(), new CountingViewDiaryEntriesCommand(),
-            new CountingViewDiaryInsightsCommand(), currentUserIdSupplier, "session", "history", "back", "exit");
+                new CountingNewDiaryEntryCommand(), new CountingViewDiaryEntriesCommand(),
+                new CountingViewDiaryInsightsCommand(), currentUserIdSupplier, "session", "history", "back", "exit");
 
         menu.execute();
 
@@ -151,8 +151,8 @@ class MenuTest {
     void shouldHandleInvalidSession() {
         RecordingSessionController sessionController = new RecordingSessionController();
         Menu menu = createMenu(new CountingUserCommands(), sessionController, new CountingNewDiaryEntryCommand(),
-            new CountingViewDiaryEntriesCommand(), new CountingViewDiaryInsightsCommand(),
-            new FixedUserIdSupplier(null), "2", "invalid", "help", "4", "7");
+                new CountingViewDiaryEntriesCommand(), new CountingViewDiaryInsightsCommand(),
+                new FixedUserIdSupplier(null), "2", "invalid", "help", "4", "7");
 
         menu.execute();
 
@@ -164,38 +164,35 @@ class MenuTest {
 
     private Menu createMenu(String... lines) {
         return createMenu(
-            new CountingUserCommands(),
-            new RecordingSessionController(),
-            new CountingNewDiaryEntryCommand(),
-            new CountingViewDiaryEntriesCommand(),
-            new CountingViewDiaryInsightsCommand(),
-            new FixedUserIdSupplier(null),
-            lines
-        );
+                new CountingUserCommands(),
+                new RecordingSessionController(),
+                new CountingNewDiaryEntryCommand(),
+                new CountingViewDiaryEntriesCommand(),
+                new CountingViewDiaryInsightsCommand(),
+                new FixedUserIdSupplier(null),
+                lines);
     }
 
     // Assorted helpers for test state
     private Menu createMenu(
-        UserCommands userCommands,
-        SessionController sessionController,
-        NewDiaryEntryCommand newDiaryEntryCommand,
-        ViewDiaryEntriesCommand viewDiaryEntriesCommand,
-        ViewDiaryInsightsCommand viewDiaryInsightsCommand,
-        Supplier<UUID> currentUserIdSupplier,
-        String... lines
-    ) {
+            UserCommands userCommands,
+            SessionController sessionController,
+            NewDiaryEntryCommand newDiaryEntryCommand,
+            ViewDiaryEntriesCommand viewDiaryEntriesCommand,
+            ViewDiaryInsightsCommand viewDiaryInsightsCommand,
+            Supplier<UUID> currentUserIdSupplier,
+            String... lines) {
         String input = String.join(System.lineSeparator(), lines) + System.lineSeparator();
         Scanner scanner = new Scanner(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
 
         return new Menu(
-            scanner,
-            userCommands,
-            sessionController,
-            newDiaryEntryCommand,
-            viewDiaryEntriesCommand,
-            viewDiaryInsightsCommand,
-            currentUserIdSupplier
-        );
+                scanner,
+                userCommands,
+                sessionController,
+                newDiaryEntryCommand,
+                viewDiaryEntriesCommand,
+                viewDiaryInsightsCommand,
+                currentUserIdSupplier);
     }
 
     private String getOutput() {
@@ -263,7 +260,7 @@ class MenuTest {
         private List<String> library = List.of();
 
         private RecordingSessionController() {
-            super(new SessionService());
+            super();
         }
 
         @Override

@@ -11,6 +11,11 @@ public class SessionController {
 
     private final SessionService sessionService;
 
+    // No-arg constructor for subclasses in tests that override methods and don’t need a real service.
+    public SessionController() {
+        this.sessionService = null;
+    }
+
     public SessionController(SessionService sessionService) {
         this.sessionService = sessionService;
     }
@@ -34,5 +39,4 @@ public class SessionController {
     public void endSession(String userId, Long sessionId) {
         sessionService.endSession(userId, sessionId);
     }
-
 }
