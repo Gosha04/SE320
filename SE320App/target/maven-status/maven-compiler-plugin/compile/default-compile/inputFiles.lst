@@ -13,11 +13,13 @@ C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE32
 C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\cli\commands\ViewSessionLibraryCommand.java
 C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\config\CliConfig.java
 C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\config\SecurityConfig.java
+C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\controller\DiaryController.java
 C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\controller\SessionController.java
 C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\controller\UserController.java
-C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\DigitalTherapyAssistantApplication.java
 C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\dto\DeleteRequest.java
 C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\dto\DiaryEntryCreateRequest.java
+C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\dto\DiaryEntryDetail.java
+C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\dto\DiaryEntryResponse.java
 C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\dto\DiaryEntrySummary.java
 C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\dto\DiaryInsights.java
 C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\dto\LoginRequest.java
@@ -29,7 +31,6 @@ C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE32
 C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\objects\SessionStatus.java
 C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\objects\UserType.java
 C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\repository\DiaryEntryRepository.java
-C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\repository\InMemoryDiaryEntryRepository.java
 C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\repository\SessionRepository.java
 C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\repository\UserRepository.java
 C:\Users\Nikolai\OneDrive\Documents\GitHub\SE320\SE320App\src\main\java\com\SE320\therapy\service\AuthenticatedUser.java
