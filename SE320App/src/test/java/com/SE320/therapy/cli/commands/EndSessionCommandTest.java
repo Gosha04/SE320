@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
@@ -45,7 +46,7 @@ public class EndSessionCommandTest {
         Scanner scanner = new Scanner(
                 new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
 
-        EndSessionCommand command = new EndSessionCommand(sessionController, scanner, userId);
+        EndSessionCommand command = new EndSessionCommand(sessionController, scanner, userCommandsFor(userId));
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream originalOut = System.out;
@@ -59,6 +60,10 @@ public class EndSessionCommandTest {
         }
 
         return outputStream.toString();
+    }
+
+    private UserCommands userCommandsFor(String userId) {
+        return new StubUserCommands(userId);
     }
 
     @Test
@@ -161,5 +166,33 @@ public class EndSessionCommandTest {
         String output = runCommand("1\n", "user1");
 
         assertTrue(output.contains("This session has already ended."));
+    }
+
+    @Test
+    void execute_requiresAuthenticatedUser() {
+        String output = runCommand("1\n", null);
+
+        assertTrue(output.contains("You must be logged in to end a session."));
+        verify(sessionController, never()).viewSessionHistory(anyString());
+        verify(sessionController, never()).endSession(anyString(), anyLong());
+    }
+
+    private static final class StubUserCommands extends UserCommands {
+        private final String userId;
+
+        private StubUserCommands(String userId) {
+            super(null, new Scanner(new ByteArrayInputStream(new byte[0])));
+            this.userId = userId;
+        }
+
+        @Override
+        public UUID getCurrentUserId() {
+            return userId != null ? UUID.fromString("11111111-1111-1111-1111-111111111111") : null;
+        }
+
+        @Override
+        public String getCurrentUserIdAsString() {
+            return userId;
+        }
     }
 }

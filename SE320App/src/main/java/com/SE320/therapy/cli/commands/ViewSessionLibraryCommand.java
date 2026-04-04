@@ -1,7 +1,10 @@
 package com.SE320.therapy.cli.commands;
 
+import org.springframework.stereotype.Component;
+
 import com.SE320.therapy.controller.SessionController;
 
+@Component
 public class ViewSessionLibraryCommand implements Command {
 
     private final SessionController sessionController;

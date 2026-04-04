@@ -4,6 +4,7 @@ import com.SE320.therapy.cli.commands.Command;
 import com.SE320.therapy.cli.commands.ContinueSessionCommand;
 import com.SE320.therapy.cli.commands.EndSessionCommand;
 import com.SE320.therapy.cli.commands.StartNewSessionCommand;
+import com.SE320.therapy.cli.commands.UserCommands;
 import com.SE320.therapy.cli.commands.ViewSessionHistoryCommand;
 import com.SE320.therapy.cli.commands.ViewSessionLibraryCommand;
 import com.SE320.therapy.controller.SessionController;
@@ -11,6 +12,7 @@ import com.SE320.therapy.controller.SessionController;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.UUID;
 
 public class CbtSessionMenu {
 
@@ -39,12 +41,13 @@ public class CbtSessionMenu {
             System.out.print("Choose an option: ");
             String input = scanner.nextLine().trim();
 
+            UserCommands fixedUserCommands = new FixedUserCommands(userId);
             Map<String, Command> commands = new HashMap<>();
             commands.put("1", new ViewSessionLibraryCommand(sessionController));
-            commands.put("2", new StartNewSessionCommand(sessionController, scanner, userId));
-            commands.put("3", new ContinueSessionCommand(sessionController, scanner, userId));
-            commands.put("4", new EndSessionCommand(sessionController, scanner, userId));
-            commands.put("5", new ViewSessionHistoryCommand(sessionController, userId));
+            commands.put("2", new StartNewSessionCommand(sessionController, scanner, fixedUserCommands));
+            commands.put("3", new ContinueSessionCommand(sessionController, scanner, fixedUserCommands));
+            commands.put("4", new EndSessionCommand(sessionController, scanner, fixedUserCommands));
+            commands.put("5", new ViewSessionHistoryCommand(sessionController, fixedUserCommands));
 
             if (input.equals("6")) {
                 running = false;
@@ -59,6 +62,25 @@ public class CbtSessionMenu {
             }
 
             command.execute();
+        }
+    }
+
+    private static final class FixedUserCommands extends UserCommands {
+        private final String userId;
+
+        private FixedUserCommands(String userId) {
+            super(null, new Scanner(new java.io.ByteArrayInputStream(new byte[0])));
+            this.userId = userId;
+        }
+
+        @Override
+        public UUID getCurrentUserId() {
+            return userId != null ? UUID.fromString("11111111-1111-1111-1111-111111111111") : null;
+        }
+
+        @Override
+        public String getCurrentUserIdAsString() {
+            return userId;
         }
     }
 }

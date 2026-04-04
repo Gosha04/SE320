@@ -55,6 +55,11 @@ public class UserCommands implements Command {
         return currentUser != null ? currentUser.id() : null;
     }
 
+    public String getCurrentUserIdAsString() {
+        UUID currentUserId = getCurrentUserId();
+        return currentUserId != null ? currentUserId.toString() : null;
+    }
+
     public UserType getCurrentUserType() {
         return currentUser != null ? currentUser.userType() : null;
     }
