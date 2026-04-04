@@ -133,6 +133,7 @@ public class Menu implements Command {
         System.out.println();
     }
 
+    //
     private void printSessionMenu() {
         System.out.println();
         System.out.println("=== Session Menu ===");
@@ -144,6 +145,8 @@ public class Menu implements Command {
         System.out.println();
     }
 
+
+    // Should be done in diary menu
     private void printDiaryMenu() {
         System.out.println();
         System.out.println("=== Diary Menu ===");

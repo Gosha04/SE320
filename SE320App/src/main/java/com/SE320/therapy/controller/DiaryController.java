@@ -22,7 +22,7 @@ import com.SE320.therapy.dto.DiaryInsights;
 import com.SE320.therapy.service.DiaryService;
 
 @RestController
-@RequestMapping("/api/diary")
+@RequestMapping("/diary")
 public class DiaryController {
 
     private final DiaryService diaryService;

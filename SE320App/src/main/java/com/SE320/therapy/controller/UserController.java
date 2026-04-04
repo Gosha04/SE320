@@ -19,7 +19,7 @@ import com.SE320.therapy.service.AuthService;
 import com.SE320.therapy.service.Authentication;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 public class UserController {
 
     private final AuthService authService;
