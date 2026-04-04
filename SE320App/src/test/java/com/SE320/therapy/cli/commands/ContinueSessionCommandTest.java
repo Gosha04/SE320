@@ -11,6 +11,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
@@ -40,7 +41,7 @@ public class ContinueSessionCommandTest {
         Scanner scanner = new Scanner(
                 new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
 
-        ContinueSessionCommand command = new ContinueSessionCommand(sessionController, scanner, userId);
+        ContinueSessionCommand command = new ContinueSessionCommand(sessionController, scanner, userCommandsFor(userId));
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream originalOut = System.out;
@@ -54,6 +55,10 @@ public class ContinueSessionCommandTest {
         }
 
         return outputStream.toString();
+    }
+
+    private UserCommands userCommandsFor(String userId) {
+        return new StubUserCommands(userId);
     }
 
     @Test
@@ -94,5 +99,32 @@ public class ContinueSessionCommandTest {
         String output = runCommand("1\n", "otherUser");
 
         assertTrue(output.contains("Session not found."));
+    }
+
+    @Test
+    void execute_requiresAuthenticatedUser() {
+        String output = runCommand("1\n", null);
+
+        assertTrue(output.contains("You must be logged in to continue a session."));
+        verify(sessionController, never()).continueSession(anyString(), anyLong());
+    }
+
+    private static final class StubUserCommands extends UserCommands {
+        private final String userId;
+
+        private StubUserCommands(String userId) {
+            super(null, new Scanner(new ByteArrayInputStream(new byte[0])));
+            this.userId = userId;
+        }
+
+        @Override
+        public UUID getCurrentUserId() {
+            return userId != null ? UUID.fromString("11111111-1111-1111-1111-111111111111") : null;
+        }
+
+        @Override
+        public String getCurrentUserIdAsString() {
+            return userId;
+        }
     }
 }

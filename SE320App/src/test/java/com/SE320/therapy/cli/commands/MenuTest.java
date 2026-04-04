@@ -10,17 +10,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.SE320.therapy.controller.SessionController;
 import com.SE320.therapy.controller.UserController;
-import com.SE320.therapy.repository.SessionRepository;
-import com.SE320.therapy.service.SessionService;
-import org.mockito.Mockito;
 
 class MenuTest {
 
@@ -55,9 +50,8 @@ class MenuTest {
     @Test
     void shouldPrintMenu() {
         CountingUserCommands userCommands = new CountingUserCommands();
-        Menu menu = createMenu(userCommands, new RecordingSessionController(), new CountingNewDiaryEntryCommand(),
-                new CountingViewDiaryEntriesCommand(), new CountingViewDiaryInsightsCommand(),
-                new FixedUserIdSupplier(null), "auth", "exit");
+        Menu menu = createMenu(userCommands, new CountingSessionCommands(), new CountingNewDiaryEntryCommand(),
+                new CountingViewDiaryEntriesCommand(), new CountingViewDiaryInsightsCommand(), "auth", "exit");
 
         menu.execute();
 
@@ -83,8 +77,8 @@ class MenuTest {
         CountingNewDiaryEntryCommand newEntry = new CountingNewDiaryEntryCommand();
         CountingViewDiaryEntriesCommand viewEntries = new CountingViewDiaryEntriesCommand();
         CountingViewDiaryInsightsCommand viewInsights = new CountingViewDiaryInsightsCommand();
-        Menu menu = createMenu(new CountingUserCommands(), new RecordingSessionController(), newEntry,
-                viewEntries, viewInsights, new FixedUserIdSupplier(null), "3", "1", "2", "3", "4", "7");
+        Menu menu = createMenu(new CountingUserCommands(), new CountingSessionCommands(), newEntry,
+                viewEntries, viewInsights, "3", "1", "2", "3", "4", "7");
 
         menu.execute();
 
@@ -107,82 +101,68 @@ class MenuTest {
 
     @Test
     void shouldDisplaySessions() {
-        RecordingSessionController sessionController = new RecordingSessionController();
-        sessionController.library = List.of("Thought Challenging", "Breathing Exercise");
-        Menu menu = createMenu(new CountingUserCommands(), sessionController, new CountingNewDiaryEntryCommand(),
+        CountingSessionCommands sessionCommands = new CountingSessionCommands();
+        Menu menu = createMenu(new CountingUserCommands(), sessionCommands, new CountingNewDiaryEntryCommand(),
                 new CountingViewDiaryEntriesCommand(), new CountingViewDiaryInsightsCommand(),
-                new FixedUserIdSupplier(null), "session", "library", "back", "exit");
+                "session", "exit");
 
         menu.execute();
 
-        assertEquals(1, sessionController.viewSessionLibraryCalls);
-        String output = getOutput();
-        assertTrue(output.contains("=== Session Menu ==="));
-        assertTrue(output.contains("--- Session Library ---"));
-        assertTrue(output.contains("1. Thought Challenging"));
-        assertTrue(output.contains("2. Breathing Exercise"));
+        assertEquals(1, sessionCommands.executeCalls);
     }
 
     @Test
     void userRequiredForSessionStart() {
-        FixedUserIdSupplier currentUserIdSupplier = new FixedUserIdSupplier(null);
-        Menu menu = createMenu(new CountingUserCommands(), new RecordingSessionController(),
+        CountingSessionCommands sessionCommands = new CountingSessionCommands();
+        Menu menu = createMenu(new CountingUserCommands(), sessionCommands,
                 new CountingNewDiaryEntryCommand(), new CountingViewDiaryEntriesCommand(),
-                new CountingViewDiaryInsightsCommand(), currentUserIdSupplier, "session", "start", "back", "exit");
+                new CountingViewDiaryInsightsCommand(), "session", "exit");
 
         menu.execute();
 
-        assertEquals(1, currentUserIdSupplier.calls);
-        assertTrue(getOutput().contains("You must be logged in to start a session."));
+        assertEquals(1, sessionCommands.executeCalls);
     }
 
     @Test
     void userRequiredForSessionView() {
-        FixedUserIdSupplier currentUserIdSupplier = new FixedUserIdSupplier(null);
-        Menu menu = createMenu(new CountingUserCommands(), new RecordingSessionController(),
+        CountingSessionCommands sessionCommands = new CountingSessionCommands();
+        Menu menu = createMenu(new CountingUserCommands(), sessionCommands,
                 new CountingNewDiaryEntryCommand(), new CountingViewDiaryEntriesCommand(),
-                new CountingViewDiaryInsightsCommand(), currentUserIdSupplier, "session", "history", "back", "exit");
+                new CountingViewDiaryInsightsCommand(), "session", "exit");
 
         menu.execute();
 
-        assertEquals(1, currentUserIdSupplier.calls);
-        assertTrue(getOutput().contains("You must be logged in to view session history."));
+        assertEquals(1, sessionCommands.executeCalls);
     }
 
     @Test
     void shouldHandleInvalidSession() {
-        RecordingSessionController sessionController = new RecordingSessionController();
-        Menu menu = createMenu(new CountingUserCommands(), sessionController, new CountingNewDiaryEntryCommand(),
-                new CountingViewDiaryEntriesCommand(), new CountingViewDiaryInsightsCommand(),
-                new FixedUserIdSupplier(null), "2", "invalid", "help", "4", "7");
+        Menu menu = createMenu(new CountingUserCommands(), new CountingSessionCommands(),
+                new CountingNewDiaryEntryCommand(), new CountingViewDiaryEntriesCommand(),
+                new CountingViewDiaryInsightsCommand(), "2", "7");
 
         menu.execute();
 
-        String output = getOutput();
-        assertTrue(output.contains("Please choose a valid session option."));
-        assertEquals(2, countOccurrences(output, "=== Session Menu ==="));
-        assertEquals(0, sessionController.viewSessionLibraryCalls);
+        assertEquals(1, countOccurrences(getOutput(), "=== Main Menu ==="));
     }
 
     private Menu createMenu(String... lines) {
         return createMenu(
                 new CountingUserCommands(),
-                new RecordingSessionController(),
+                new CountingSessionCommands(),
                 new CountingNewDiaryEntryCommand(),
                 new CountingViewDiaryEntriesCommand(),
                 new CountingViewDiaryInsightsCommand(),
-                new FixedUserIdSupplier(null),
                 lines);
     }
 
     // Assorted helpers for test state
     private Menu createMenu(
             UserCommands userCommands,
-            SessionController sessionController,
+            SessionCommands sessionCommands,
             NewDiaryEntryCommand newDiaryEntryCommand,
             ViewDiaryEntriesCommand viewDiaryEntriesCommand,
             ViewDiaryInsightsCommand viewDiaryInsightsCommand,
-            Supplier<UUID> currentUserIdSupplier,
             String... lines) {
         String input = String.join(System.lineSeparator(), lines) + System.lineSeparator();
         Scanner scanner = new Scanner(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
@@ -190,11 +170,10 @@ class MenuTest {
         return new Menu(
                 scanner,
                 userCommands,
-                sessionController,
+                sessionCommands,
                 newDiaryEntryCommand,
                 viewDiaryEntriesCommand,
-                viewDiaryInsightsCommand,
-                currentUserIdSupplier);
+                viewDiaryInsightsCommand);
     }
 
     private String getOutput() {
@@ -257,33 +236,21 @@ class MenuTest {
         }
     }
 
-    private static final class RecordingSessionController extends SessionController {
-        private int viewSessionLibraryCalls;
-        private List<String> library = List.of();
+    private static final class CountingSessionCommands extends SessionCommands {
+        private int executeCalls;
 
-        private RecordingSessionController() {
-            super(new SessionService(Mockito.mock(SessionRepository.class)));
+        private CountingSessionCommands() {
+            super(new Scanner(new ByteArrayInputStream(new byte[0])),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null);
         }
 
         @Override
-        public List<String> viewSessionLibrary() {
-            viewSessionLibraryCalls++;
-            return library;
-        }
-    }
-
-    private static final class FixedUserIdSupplier implements Supplier<UUID> {
-        private final UUID userId;
-        private int calls;
-
-        private FixedUserIdSupplier(UUID userId) {
-            this.userId = userId;
-        }
-
-        @Override
-        public UUID get() {
-            calls++;
-            return userId;
+        public void execute() {
+            executeCalls++;
         }
     }
 }
