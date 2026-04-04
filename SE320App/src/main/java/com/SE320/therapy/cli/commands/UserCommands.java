@@ -45,7 +45,7 @@ public class UserCommands implements Command {
                 case "delete" -> handleDelete();
                 case "session" -> printCurrentSession();
                 case "help" -> printMenu();
-                case "exit" -> running = false;
+                case "back" -> running = false;
                 default -> System.out.println("Please choose a valid menu option.");
             }
         }
@@ -58,6 +58,10 @@ public class UserCommands implements Command {
     public String getCurrentUserIdAsString() {
         UUID currentUserId = getCurrentUserId();
         return currentUserId != null ? currentUserId.toString() : null;
+    }
+
+    public UserType getCurrentUserType() {
+        return currentUser != null ? currentUser.userType() : null;
     }
 
     private void printMenu() {

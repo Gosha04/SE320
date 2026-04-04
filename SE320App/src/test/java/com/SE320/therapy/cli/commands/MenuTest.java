@@ -58,14 +58,18 @@ class MenuTest {
         assertEquals(1, userCommands.executeCalls);
     }
 
-    @Test // Should be removed eventually, [Josh] using for testing while others are busy
-    void shouldHaveResponses() {
-        Menu menu = createMenu("dashboard", "crisis", "settings", "bad-option", " HELP ", "Exit");
+    @Test
+    void shouldHandleDashboardAndOtherResponses() {
+        CountingDashboardCommands dashboardCommands = new CountingDashboardCommands();
+        Menu menu = createMenu(new CountingUserCommands(), new RecordingSessionController(),
+                new CountingNewDiaryEntryCommand(), new CountingViewDiaryEntriesCommand(),
+                new CountingViewDiaryInsightsCommand(), dashboardCommands, new FixedUserIdSupplier(null),
+                "dashboard", "crisis", "settings", "bad-option", " HELP ", "Exit");
 
         menu.execute();
 
         String output = getOutput();
-        assertTrue(output.contains("Dashboard commands are not available yet."));
+        assertEquals(1, dashboardCommands.executeCalls);
         assertTrue(output.contains("Crisis commands are not available yet."));
         assertTrue(output.contains("Settings commands are not available yet."));
         assertTrue(output.contains("Please choose a valid menu option."));
@@ -104,7 +108,7 @@ class MenuTest {
         CountingSessionCommands sessionCommands = new CountingSessionCommands();
         Menu menu = createMenu(new CountingUserCommands(), sessionCommands, new CountingNewDiaryEntryCommand(),
                 new CountingViewDiaryEntriesCommand(), new CountingViewDiaryInsightsCommand(),
-                "session", "exit");
+                new FixedUserIdSupplier(null), "session", "library", "back", "exit");
 
         menu.execute();
 
@@ -116,7 +120,7 @@ class MenuTest {
         CountingSessionCommands sessionCommands = new CountingSessionCommands();
         Menu menu = createMenu(new CountingUserCommands(), sessionCommands,
                 new CountingNewDiaryEntryCommand(), new CountingViewDiaryEntriesCommand(),
-                new CountingViewDiaryInsightsCommand(), "session", "exit");
+                new CountingViewDiaryInsightsCommand(), currentUserIdSupplier, "session", "start", "back", "exit");
 
         menu.execute();
 
@@ -128,7 +132,7 @@ class MenuTest {
         CountingSessionCommands sessionCommands = new CountingSessionCommands();
         Menu menu = createMenu(new CountingUserCommands(), sessionCommands,
                 new CountingNewDiaryEntryCommand(), new CountingViewDiaryEntriesCommand(),
-                new CountingViewDiaryInsightsCommand(), "session", "exit");
+                new CountingViewDiaryInsightsCommand(), currentUserIdSupplier, "session", "history", "back", "exit");
 
         menu.execute();
 
@@ -137,9 +141,10 @@ class MenuTest {
 
     @Test
     void shouldHandleInvalidSession() {
-        Menu menu = createMenu(new CountingUserCommands(), new CountingSessionCommands(),
-                new CountingNewDiaryEntryCommand(), new CountingViewDiaryEntriesCommand(),
-                new CountingViewDiaryInsightsCommand(), "2", "7");
+        RecordingSessionController sessionController = new RecordingSessionController();
+        Menu menu = createMenu(new CountingUserCommands(), sessionController, new CountingNewDiaryEntryCommand(),
+                new CountingViewDiaryEntriesCommand(), new CountingViewDiaryInsightsCommand(),
+                new FixedUserIdSupplier(null), "2", "invalid", "help", "4", "7");
 
         menu.execute();
 
@@ -153,6 +158,7 @@ class MenuTest {
                 new CountingNewDiaryEntryCommand(),
                 new CountingViewDiaryEntriesCommand(),
                 new CountingViewDiaryInsightsCommand(),
+                new FixedUserIdSupplier(null),
                 lines);
     }
 
@@ -219,16 +225,25 @@ class MenuTest {
         }
     }
 
-    private static final class CountingSessionCommands extends SessionCommands {
+    private static final class CountingDashboardCommands extends DashboardCommands {
         private int executeCalls;
 
-        private CountingSessionCommands() {
-            super(new Scanner(new ByteArrayInputStream(new byte[0])),
-                    null,
-                    null,
-                    null,
-                    null,
-                    null);
+        private CountingDashboardCommands() {
+            super(null, new CountingUserCommands(), new Scanner(new ByteArrayInputStream(new byte[0])));
+        }
+
+        @Override
+        public void execute() {
+            executeCalls++;
+        }
+    }
+
+    private static final class RecordingSessionController extends SessionController {
+        private int viewSessionLibraryCalls;
+        private List<String> library = List.of();
+
+        private RecordingSessionController() {
+            super(new SessionService(Mockito.mock(SessionRepository.class)));
         }
 
         @Override

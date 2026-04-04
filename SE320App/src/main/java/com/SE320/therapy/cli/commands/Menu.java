@@ -14,7 +14,9 @@ public class Menu implements Command {
     private final UserCommands userCommands;
     private final SessionCommands sessionCommands;
     private final DiaryCommands diaryCommands;
+    private final DashboardCommands dashboardCommands;
     private final Supplier<UUID> currentUserIdSupplier;
+  
 
     public Menu(Scanner scanner,
                 UserCommands userCommands,
@@ -24,6 +26,7 @@ public class Menu implements Command {
         this.userCommands = userCommands;
         this.sessionCommands = sessionCommands;
         this.diaryCommands = diaryCommands;
+        this.dashboardCommands = dashboardCommands;
         this.currentUserIdSupplier = currentUserIdSupplier;
     }
 
@@ -41,7 +44,7 @@ public class Menu implements Command {
                 case "1", "authentication", "auth" -> userCommands.execute();
                 case "2", "session", "sessions" -> sessionCommands.execute();
                 case "3", "diary" -> diaryCommands.execute();
-                case "4", "dashboard" -> System.out.println("Dashboard commands are not available yet.");
+                case "4", "dashboard" -> dashboardCommands.execute();
                 case "5", "crisis" -> System.out.println("Crisis commands are not available yet.");
                 case "6", "settings" -> System.out.println("Settings commands are not available yet.");
                 case "help" -> printMainMenu();
@@ -69,6 +72,7 @@ public class Menu implements Command {
         System.out.println();
     }
 
+    // Should be done in diary menu
     private void printDiaryMenu() {
         System.out.println();
         System.out.println("=== Diary Menu ===");
