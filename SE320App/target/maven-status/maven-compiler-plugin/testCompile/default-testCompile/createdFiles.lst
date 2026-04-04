@@ -1,0 +1,17 @@
+com\SE320\therapy\cli\CbtSessionMenuTest.class
+com\SE320\therapy\cli\commands\MenuTest$CountingViewDiaryInsightsCommand.class
+com\SE320\therapy\cli\commands\ContinueSessionCommandTest.class
+com\SE320\therapy\cli\commands\MenuTest$CountingNewDiaryEntryCommand.class
+com\SE320\therapy\cli\commands\ViewSessionLibraryCommandTest.class
+com\SE320\therapy\controller\SessionControllerTest.class
+com\SE320\therapy\service\AuthenticationTest.class
+com\SE320\therapy\cli\commands\MenuTest$CountingUserCommands.class
+com\SE320\therapy\AppTest.class
+com\SE320\therapy\cli\commands\MenuTest$RecordingSessionController.class
+com\SE320\therapy\cli\commands\ViewSessionHistoryCommandTest.class
+com\SE320\therapy\cli\commands\EndSessionCommandTest.class
+com\SE320\therapy\cli\commands\MenuTest$CountingViewDiaryEntriesCommand.class
+com\SE320\therapy\service\SessionServiceTest.class
+com\SE320\therapy\cli\commands\MenuTest$FixedUserIdSupplier.class
+com\SE320\therapy\cli\commands\StartNewSessionCommandTest.class
+com\SE320\therapy\cli\commands\MenuTest.class

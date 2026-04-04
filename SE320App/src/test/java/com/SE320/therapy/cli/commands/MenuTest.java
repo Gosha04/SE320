@@ -177,25 +177,30 @@ class MenuTest {
 
     // Assorted helpers for test state
     private Menu createMenu(
-            UserCommands userCommands,
-            SessionController sessionController,
-            NewDiaryEntryCommand newDiaryEntryCommand,
-            ViewDiaryEntriesCommand viewDiaryEntriesCommand,
-            ViewDiaryInsightsCommand viewDiaryInsightsCommand,
-            Supplier<UUID> currentUserIdSupplier,
-            String... lines) {
-        String input = String.join(System.lineSeparator(), lines) + System.lineSeparator();
-        Scanner scanner = new Scanner(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
+        UserCommands userCommands,
+        SessionController sessionController,
+        NewDiaryEntryCommand newDiaryEntryCommand,
+        ViewDiaryEntriesCommand viewDiaryEntriesCommand,
+        ViewDiaryInsightsCommand viewDiaryInsightsCommand,
+        Supplier<UUID> currentUserIdSupplier,
+        String... lines) {
+    String input = String.join(System.lineSeparator(), lines) + System.lineSeparator();
+    Scanner scanner = new Scanner(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
 
-        return new Menu(
-                scanner,
-                userCommands,
-                sessionController,
-                newDiaryEntryCommand,
-                viewDiaryEntriesCommand,
-                viewDiaryInsightsCommand,
-                currentUserIdSupplier);
-    }
+    DiaryCommands diaryCommands = new DiaryCommands(
+            scanner,
+            newDiaryEntryCommand,
+            viewDiaryEntriesCommand,
+            viewDiaryInsightsCommand
+    );
+
+    return new Menu(
+            scanner,
+            userCommands,
+            sessionController,
+            diaryCommands,
+            currentUserIdSupplier);
+}
 
     private String getOutput() {
         return outputStream.toString(StandardCharsets.UTF_8);

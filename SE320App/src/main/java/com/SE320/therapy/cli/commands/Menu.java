@@ -15,24 +15,18 @@ public class Menu implements Command {
     private final Scanner scanner;
     private final UserCommands userCommands;
     private final SessionController sessionController;
-    private final NewDiaryEntryCommand newDiaryEntryCommand;
-    private final ViewDiaryEntriesCommand viewDiaryEntriesCommand;
-    private final ViewDiaryInsightsCommand viewDiaryInsightsCommand;
+    private final DiaryCommands diaryCommands;
     private final Supplier<UUID> currentUserIdSupplier;
 
     public Menu(Scanner scanner,
                 UserCommands userCommands,
                 SessionController sessionController,
-                NewDiaryEntryCommand newDiaryEntryCommand,
-                ViewDiaryEntriesCommand viewDiaryEntriesCommand,
-                ViewDiaryInsightsCommand viewDiaryInsightsCommand,
+                DiaryCommands diaryCommands,
                 Supplier<UUID> currentUserIdSupplier) {
         this.scanner = scanner;
         this.userCommands = userCommands;
         this.sessionController = sessionController;
-        this.newDiaryEntryCommand = newDiaryEntryCommand;
-        this.viewDiaryEntriesCommand = viewDiaryEntriesCommand;
-        this.viewDiaryInsightsCommand = viewDiaryInsightsCommand;
+        this.diaryCommands = diaryCommands;
         this.currentUserIdSupplier = currentUserIdSupplier;
     }
 
@@ -49,7 +43,7 @@ public class Menu implements Command {
             switch (choice) {
                 case "1", "authentication", "auth" -> userCommands.execute();
                 case "2", "session", "sessions" -> executeSessionMenu();
-                case "3", "diary" -> executeDiaryMenu();
+                case "3", "diary" -> diaryCommands.execute();
                 case "4", "dashboard" -> System.out.println("Dashboard commands are not available yet.");
                 case "5", "crisis" -> System.out.println("Crisis commands are not available yet.");
                 case "6", "settings" -> System.out.println("Settings commands are not available yet.");
@@ -90,26 +84,6 @@ public class Menu implements Command {
                 case "help" -> printSessionMenu();
                 case "4", "back" -> running = false;
                 default -> System.out.println("Please choose a valid session option.");
-            }
-        }
-    }
-
-    private void executeDiaryMenu() {
-        boolean running = true;
-
-        printDiaryMenu();
-
-        while (running) {
-            System.out.print("Diary command: ");
-            String choice = scanner.nextLine().trim().toLowerCase(Locale.ROOT);
-
-            switch (choice) {
-                case "1", "new" -> newDiaryEntryCommand.execute();
-                case "2", "entries", "view" -> viewDiaryEntriesCommand.execute();
-                case "3", "insights" -> viewDiaryInsightsCommand.execute();
-                case "help" -> printDiaryMenu();
-                case "4", "back" -> running = false;
-                default -> System.out.println("Please choose a valid diary option.");
             }
         }
     }
