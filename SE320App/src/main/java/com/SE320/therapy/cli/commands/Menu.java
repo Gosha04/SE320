@@ -18,6 +18,7 @@ public class Menu implements Command {
     private final NewDiaryEntryCommand newDiaryEntryCommand;
     private final ViewDiaryEntriesCommand viewDiaryEntriesCommand;
     private final ViewDiaryInsightsCommand viewDiaryInsightsCommand;
+    private final DashboardCommands dashboardCommands;
     private final Supplier<UUID> currentUserIdSupplier;
 
     public Menu(Scanner scanner,
@@ -26,6 +27,7 @@ public class Menu implements Command {
                 NewDiaryEntryCommand newDiaryEntryCommand,
                 ViewDiaryEntriesCommand viewDiaryEntriesCommand,
                 ViewDiaryInsightsCommand viewDiaryInsightsCommand,
+                DashboardCommands dashboardCommands,
                 Supplier<UUID> currentUserIdSupplier) {
         this.scanner = scanner;
         this.userCommands = userCommands;
@@ -33,6 +35,7 @@ public class Menu implements Command {
         this.newDiaryEntryCommand = newDiaryEntryCommand;
         this.viewDiaryEntriesCommand = viewDiaryEntriesCommand;
         this.viewDiaryInsightsCommand = viewDiaryInsightsCommand;
+        this.dashboardCommands = dashboardCommands;
         this.currentUserIdSupplier = currentUserIdSupplier;
     }
 
@@ -50,7 +53,7 @@ public class Menu implements Command {
                 case "1", "authentication", "auth" -> userCommands.execute();
                 case "2", "session", "sessions" -> executeSessionMenu();
                 case "3", "diary" -> executeDiaryMenu();
-                case "4", "dashboard" -> System.out.println("Dashboard commands are not available yet.");
+                case "4", "dashboard" -> dashboardCommands.execute();
                 case "5", "crisis" -> System.out.println("Crisis commands are not available yet.");
                 case "6", "settings" -> System.out.println("Settings commands are not available yet.");
                 case "help" -> printMainMenu();

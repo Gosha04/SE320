@@ -55,6 +55,10 @@ public class UserCommands implements Command {
         return currentUser != null ? currentUser.id() : null;
     }
 
+    public UserType getCurrentUserType() {
+        return currentUser != null ? currentUser.userType() : null;
+    }
+
     private void printMenu() {
         System.out.println();
         System.out.println("=== User Menu ===");

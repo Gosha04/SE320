@@ -18,9 +18,6 @@ import org.junit.jupiter.api.Test;
 
 import com.SE320.therapy.controller.SessionController;
 import com.SE320.therapy.controller.UserController;
-import com.SE320.therapy.repository.SessionRepository;
-import com.SE320.therapy.service.SessionService;
-import org.mockito.Mockito;
 
 class MenuTest {
 
@@ -56,7 +53,7 @@ class MenuTest {
     void shouldPrintMenu() {
         CountingUserCommands userCommands = new CountingUserCommands();
         Menu menu = createMenu(userCommands, new RecordingSessionController(), new CountingNewDiaryEntryCommand(),
-                new CountingViewDiaryEntriesCommand(), new CountingViewDiaryInsightsCommand(),
+                new CountingViewDiaryEntriesCommand(), new CountingViewDiaryInsightsCommand(), new CountingDashboardCommands(),
                 new FixedUserIdSupplier(null), "auth", "exit");
 
         menu.execute();
@@ -64,14 +61,18 @@ class MenuTest {
         assertEquals(1, userCommands.executeCalls);
     }
 
-    @Test // Should be removed eventually, [Josh] using for testing while others are busy
-    void shouldHaveResponses() {
-        Menu menu = createMenu("dashboard", "crisis", "settings", "bad-option", " HELP ", "Exit");
+    @Test
+    void shouldHandleDashboardAndOtherResponses() {
+        CountingDashboardCommands dashboardCommands = new CountingDashboardCommands();
+        Menu menu = createMenu(new CountingUserCommands(), new RecordingSessionController(),
+                new CountingNewDiaryEntryCommand(), new CountingViewDiaryEntriesCommand(),
+                new CountingViewDiaryInsightsCommand(), dashboardCommands, new FixedUserIdSupplier(null),
+                "dashboard", "crisis", "settings", "bad-option", " HELP ", "Exit");
 
         menu.execute();
 
         String output = getOutput();
-        assertTrue(output.contains("Dashboard commands are not available yet."));
+        assertEquals(1, dashboardCommands.executeCalls);
         assertTrue(output.contains("Crisis commands are not available yet."));
         assertTrue(output.contains("Settings commands are not available yet."));
         assertTrue(output.contains("Please choose a valid menu option."));
@@ -83,8 +84,9 @@ class MenuTest {
         CountingNewDiaryEntryCommand newEntry = new CountingNewDiaryEntryCommand();
         CountingViewDiaryEntriesCommand viewEntries = new CountingViewDiaryEntriesCommand();
         CountingViewDiaryInsightsCommand viewInsights = new CountingViewDiaryInsightsCommand();
+        CountingDashboardCommands dashboardCommands = new CountingDashboardCommands();
         Menu menu = createMenu(new CountingUserCommands(), new RecordingSessionController(), newEntry,
-                viewEntries, viewInsights, new FixedUserIdSupplier(null), "3", "1", "2", "3", "4", "7");
+                viewEntries, viewInsights, dashboardCommands, new FixedUserIdSupplier(null), "3", "1", "2", "3", "4", "7");
 
         menu.execute();
 
@@ -111,7 +113,7 @@ class MenuTest {
         sessionController.library = List.of("Thought Challenging", "Breathing Exercise");
         Menu menu = createMenu(new CountingUserCommands(), sessionController, new CountingNewDiaryEntryCommand(),
                 new CountingViewDiaryEntriesCommand(), new CountingViewDiaryInsightsCommand(),
-                new FixedUserIdSupplier(null), "session", "library", "back", "exit");
+                new CountingDashboardCommands(), new FixedUserIdSupplier(null), "session", "library", "back", "exit");
 
         menu.execute();
 
@@ -128,7 +130,8 @@ class MenuTest {
         FixedUserIdSupplier currentUserIdSupplier = new FixedUserIdSupplier(null);
         Menu menu = createMenu(new CountingUserCommands(), new RecordingSessionController(),
                 new CountingNewDiaryEntryCommand(), new CountingViewDiaryEntriesCommand(),
-                new CountingViewDiaryInsightsCommand(), currentUserIdSupplier, "session", "start", "back", "exit");
+                new CountingViewDiaryInsightsCommand(), new CountingDashboardCommands(), currentUserIdSupplier,
+                "session", "start", "back", "exit");
 
         menu.execute();
 
@@ -141,7 +144,8 @@ class MenuTest {
         FixedUserIdSupplier currentUserIdSupplier = new FixedUserIdSupplier(null);
         Menu menu = createMenu(new CountingUserCommands(), new RecordingSessionController(),
                 new CountingNewDiaryEntryCommand(), new CountingViewDiaryEntriesCommand(),
-                new CountingViewDiaryInsightsCommand(), currentUserIdSupplier, "session", "history", "back", "exit");
+                new CountingViewDiaryInsightsCommand(), new CountingDashboardCommands(), currentUserIdSupplier,
+                "session", "history", "back", "exit");
 
         menu.execute();
 
@@ -154,7 +158,7 @@ class MenuTest {
         RecordingSessionController sessionController = new RecordingSessionController();
         Menu menu = createMenu(new CountingUserCommands(), sessionController, new CountingNewDiaryEntryCommand(),
                 new CountingViewDiaryEntriesCommand(), new CountingViewDiaryInsightsCommand(),
-                new FixedUserIdSupplier(null), "2", "invalid", "help", "4", "7");
+                new CountingDashboardCommands(), new FixedUserIdSupplier(null), "2", "invalid", "help", "4", "7");
 
         menu.execute();
 
@@ -171,6 +175,7 @@ class MenuTest {
                 new CountingNewDiaryEntryCommand(),
                 new CountingViewDiaryEntriesCommand(),
                 new CountingViewDiaryInsightsCommand(),
+                new CountingDashboardCommands(),
                 new FixedUserIdSupplier(null),
                 lines);
     }
@@ -182,6 +187,7 @@ class MenuTest {
             NewDiaryEntryCommand newDiaryEntryCommand,
             ViewDiaryEntriesCommand viewDiaryEntriesCommand,
             ViewDiaryInsightsCommand viewDiaryInsightsCommand,
+            DashboardCommands dashboardCommands,
             Supplier<UUID> currentUserIdSupplier,
             String... lines) {
         String input = String.join(System.lineSeparator(), lines) + System.lineSeparator();
@@ -194,6 +200,7 @@ class MenuTest {
                 newDiaryEntryCommand,
                 viewDiaryEntriesCommand,
                 viewDiaryInsightsCommand,
+                dashboardCommands,
                 currentUserIdSupplier);
     }
 
@@ -257,12 +264,25 @@ class MenuTest {
         }
     }
 
+    private static final class CountingDashboardCommands extends DashboardCommands {
+        private int executeCalls;
+
+        private CountingDashboardCommands() {
+            super(null, new CountingUserCommands(), new Scanner(new ByteArrayInputStream(new byte[0])));
+        }
+
+        @Override
+        public void execute() {
+            executeCalls++;
+        }
+    }
+
     private static final class RecordingSessionController extends SessionController {
         private int viewSessionLibraryCalls;
         private List<String> library = List.of();
 
         private RecordingSessionController() {
-            super(new SessionService(Mockito.mock(SessionRepository.class)));
+            super();
         }
 
         @Override

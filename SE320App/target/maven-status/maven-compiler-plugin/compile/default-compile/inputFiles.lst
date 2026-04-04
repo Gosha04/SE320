@@ -18,6 +18,8 @@
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/controller/DiaryController.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/controller/SessionController.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/controller/UserController.java
+/Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/dto/AchievementRequest.java
+/Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/dto/AchievementResponse.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/dto/DeleteRequest.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/dto/DiaryEntryCreateRequest.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/dto/DiaryEntryDetail.java
@@ -27,16 +29,17 @@
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/dto/LoginRequest.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/dto/RegisterRequest.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/dto/UserResponse.java
+/Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/entity/Achievement.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/entity/CBTSession.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/entity/DiaryEntry.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/entity/User.java
-/Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/objects/Achievement.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/objects/Dashboard.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/objects/MonthlyTrends.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/objects/ProgressPoint.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/objects/SessionStatus.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/objects/UserType.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/objects/WeeklyProgress.java
+/Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/repository/AchievementRepository.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/repository/DiaryEntryRepository.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/repository/SessionRepository.java
 /Users/gosha04/Documents/CPSC_Courses/SE/SE320/SE320App/src/main/java/com/SE320/therapy/repository/UserRepository.java

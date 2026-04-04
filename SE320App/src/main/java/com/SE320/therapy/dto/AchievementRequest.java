@@ -1,21 +1,17 @@
-package com.SE320.therapy.objects;
+package com.SE320.therapy.dto;
 
 import java.time.Month;
 
-public class Achievement {
-
-    // Not sure what specific objects we can create here
-    // Doctors should be able to create these and that should be that
-
+public class AchievementRequest {
     private String title;
     private String description;
     private boolean unlocked;
     private Month unlockedMonth;
 
-    public Achievement() {
+    public AchievementRequest() {
     }
 
-    public Achievement(String title, String description, boolean unlocked, Month unlockedMonth) {
+    public AchievementRequest(String title, String description, boolean unlocked, Month unlockedMonth) {
         this.title = title;
         this.description = description;
         this.unlocked = unlocked;

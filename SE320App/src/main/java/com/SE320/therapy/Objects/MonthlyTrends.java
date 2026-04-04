@@ -32,6 +32,10 @@ public class MonthlyTrends {
         return period;
     }
 
+    public YearMonth getCurrentMonth() {
+        return getPeriod();
+    }
+
     public void setPeriod(YearMonth period) {
         if (period != null) {
             this.period = period;
@@ -58,6 +62,10 @@ public class MonthlyTrends {
 
     public int getJournalEntriesCreated() {
         return journalEntriesCreated;
+    }
+
+    public int getJournalEntriesThisMonth() {
+        return getJournalEntriesCreated();
     }
 
     public void setJournalEntriesCreated(int journalEntriesCreated) {

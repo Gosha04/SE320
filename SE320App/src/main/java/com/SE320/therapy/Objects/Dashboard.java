@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.SE320.therapy.entity.Achievement;
+
 public class Dashboard {
 
     private MonthlyTrends monthlyTrends;

@@ -1,14 +1,17 @@
 package com.SE320.therapy.service;
 
+import com.SE320.therapy.dto.AchievementRequest;
+import com.SE320.therapy.dto.AchievementResponse;
+import com.SE320.therapy.entity.Achievement;
 import com.SE320.therapy.entity.CBTSession;
 import com.SE320.therapy.entity.DiaryEntry;
 import com.SE320.therapy.entity.User;
-import com.SE320.therapy.objects.Achievement;
 import com.SE320.therapy.objects.Dashboard;
 import com.SE320.therapy.objects.MonthlyTrends;
 import com.SE320.therapy.objects.ProgressPoint;
 import com.SE320.therapy.objects.SessionStatus;
 import com.SE320.therapy.objects.WeeklyProgress;
+import com.SE320.therapy.repository.AchievementRepository;
 import com.SE320.therapy.repository.DiaryEntryRepository;
 import com.SE320.therapy.repository.SessionRepository;
 import com.SE320.therapy.repository.UserRepository;
@@ -29,13 +32,16 @@ import java.util.UUID;
 public class DashboardService {
 
     private final UserRepository userRepository;
+    private final AchievementRepository achievementRepository;
     private final DiaryEntryRepository diaryEntryRepository;
     private final SessionRepository sessionRepository;
 
     public DashboardService(UserRepository userRepository,
+                            AchievementRepository achievementRepository,
                             DiaryEntryRepository diaryEntryRepository,
                             SessionRepository sessionRepository) {
         this.userRepository = userRepository;
+        this.achievementRepository = achievementRepository;
         this.diaryEntryRepository = diaryEntryRepository;
         this.sessionRepository = sessionRepository;
     }
@@ -53,9 +59,69 @@ public class DashboardService {
 
         MonthlyTrends monthlyTrends = buildMonthlyTrends(entries, sessions);
         WeeklyProgress weeklyProgress = buildWeeklyProgress(entries);
-        List<Achievement> achievements = buildAchievements(entries, sessions, weeklyProgress);
+        syncAchievements(user, entries, sessions, weeklyProgress);
+        List<Achievement> achievements = achievementRepository.findByUser_Id(userId);
 
         return new Dashboard(monthlyTrends, weeklyProgress, achievements);
+    }
+
+    public List<AchievementResponse> getAchievements(UUID userId) {
+        validateUserId(userId);
+        userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
+
+        return achievementRepository.findByUser_Id(userId).stream()
+                .map(this::toAchievementResponse)
+                .toList();
+    }
+
+    public AchievementResponse createAchievement(UUID userId, AchievementRequest request) {
+        validateUserId(userId);
+        validateAchievementRequest(request);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
+
+        Achievement achievement = new Achievement(
+                null,
+                user,
+                request.getTitle().trim(),
+                request.getDescription().trim(),
+                request.isUnlocked(),
+                request.isUnlocked() ? request.getUnlockedMonth() : null
+        );
+
+        return toAchievementResponse(achievementRepository.save(achievement));
+    }
+
+    public AchievementResponse updateAchievement(UUID userId, UUID achievementId, AchievementRequest request) {
+        validateUserId(userId);
+        if (achievementId == null) {
+            throw new IllegalArgumentException("Achievement ID is required.");
+        }
+        validateAchievementRequest(request);
+
+        Achievement achievement = achievementRepository.findByIdAndUser_Id(achievementId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Achievement not found."));
+
+        achievement.setTitle(request.getTitle().trim());
+        achievement.setDescription(request.getDescription().trim());
+        achievement.setUnlocked(request.isUnlocked());
+        achievement.setUnlockedMonth(request.isUnlocked() ? request.getUnlockedMonth() : null);
+
+        return toAchievementResponse(achievementRepository.save(achievement));
+    }
+
+    public void deleteAchievement(UUID userId, UUID achievementId) {
+        validateUserId(userId);
+        if (achievementId == null) {
+            throw new IllegalArgumentException("Achievement ID is required.");
+        }
+
+        Achievement achievement = achievementRepository.findByIdAndUser_Id(achievementId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Achievement not found."));
+
+        achievementRepository.delete(achievement);
     }
 
     private MonthlyTrends buildMonthlyTrends(List<DiaryEntry> entries, List<CBTSession> sessions) {
@@ -175,41 +241,46 @@ public class DashboardService {
         return streak;
     }
 
-    private List<Achievement> buildAchievements(List<DiaryEntry> entries,
-                                                List<CBTSession> sessions,
-                                                WeeklyProgress weeklyProgress) {
-        List<Achievement> achievements = new ArrayList<>();
+    private void syncAchievements(User user,
+                                  List<DiaryEntry> entries,
+                                  List<CBTSession> sessions,
+                                  WeeklyProgress weeklyProgress) {
         Month currentMonth = Month.from(LocalDate.now());
 
-        achievements.add(new Achievement(
+        upsertAchievement(
+                user,
                 "First Reflection",
                 "Create your first diary entry.",
                 !entries.isEmpty(),
                 !entries.isEmpty() ? currentMonth : null
-        ));
+        );
 
-        achievements.add(new Achievement(
+        boolean hasCompletedSession = hasCompletedSessions(sessions, 1);
+        upsertAchievement(
+                user,
                 "Session Starter",
                 "Complete your first CBT session.",
-                hasCompletedSessions(sessions, 1),
-                hasCompletedSessions(sessions, 1) ? currentMonth : null
-        ));
+                hasCompletedSession,
+                hasCompletedSession ? currentMonth : null
+        );
 
-        achievements.add(new Achievement(
+        boolean hasConsistentWeek = weeklyProgress.getCompletedGoals() >= 5;
+        upsertAchievement(
+                user,
                 "Consistent Week",
                 "Record progress on at least 5 days this week.",
-                weeklyProgress.getCompletedGoals() >= 5,
-                weeklyProgress.getCompletedGoals() >= 5 ? currentMonth : null
-        ));
+                hasConsistentWeek,
+                hasConsistentWeek ? currentMonth : null
+        );
 
-        achievements.add(new Achievement(
+        boolean hasMomentum = weeklyProgress.getCurrentStreak() >= 3;
+        upsertAchievement(
+                user,
                 "Momentum Builder",
                 "Maintain a 3-day journaling streak.",
-                weeklyProgress.getCurrentStreak() >= 3,
-                weeklyProgress.getCurrentStreak() >= 3 ? currentMonth : null
-        ));
-
-        return achievements;
+                hasMomentum,
+                hasMomentum ? currentMonth : null
+        );
     }
 
     private boolean hasCompletedSessions(List<CBTSession> sessions, int minimumCompletedSessions) {
@@ -222,5 +293,51 @@ public class DashboardService {
         }
 
         return completedSessions >= minimumCompletedSessions;
+    }
+
+    private void upsertAchievement(User user,
+                                   String title,
+                                   String description,
+                                   boolean unlocked,
+                                   Month unlockedMonth) {
+        Achievement achievement = achievementRepository.findByUser_IdAndTitle(user.getId(), title)
+                .orElseGet(() -> new Achievement(null, user, title, description, false, null));
+
+        achievement.setDescription(description);
+        achievement.setUnlocked(unlocked);
+        achievement.setUnlockedMonth(unlocked ? unlockedMonth : null);
+
+        achievementRepository.save(achievement);
+    }
+
+    private void validateUserId(UUID userId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID is required.");
+        }
+    }
+
+    private void validateAchievementRequest(AchievementRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Achievement request is required.");
+        }
+
+        if (request.getTitle() == null || request.getTitle().trim().isEmpty()) {
+            throw new IllegalArgumentException("Achievement title is required.");
+        }
+
+        if (request.getDescription() == null || request.getDescription().trim().isEmpty()) {
+            throw new IllegalArgumentException("Achievement description is required.");
+        }
+    }
+
+    private AchievementResponse toAchievementResponse(Achievement achievement) {
+        return new AchievementResponse(
+                achievement.getId(),
+                achievement.getUser().getId(),
+                achievement.getTitle(),
+                achievement.getDescription(),
+                achievement.isUnlocked(),
+                achievement.getUnlockedMonth()
+        );
     }
 }
