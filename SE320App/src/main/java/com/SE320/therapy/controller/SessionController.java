@@ -2,11 +2,20 @@ package com.SE320.therapy.controller;
 
 import com.SE320.therapy.entity.CBTSession;
 import com.SE320.therapy.service.SessionService;
-import org.springframework.stereotype.Controller;
 
 import java.util.List;
 
-@Controller
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/sessions")
 public class SessionController {
 
     private final SessionService sessionService;
@@ -20,23 +29,30 @@ public class SessionController {
         this.sessionService = sessionService;
     }
 
+    @GetMapping("/library")
     public List<String> viewSessionLibrary() {
         return sessionService.viewSessionLibrary();
     }
 
-    public CBTSession startNewSession(String userId, String sessionType) {
+    @PostMapping("/start")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CBTSession startNewSession(@RequestParam String userId, @RequestParam String sessionType) {
         return sessionService.startNewSession(userId, sessionType);
     }
 
-    public List<CBTSession> viewSessionHistory(String userId) {
+    @GetMapping("/history/{userId}")
+    public List<CBTSession> viewSessionHistory(@PathVariable String userId) {
         return sessionService.viewSessionHistory(userId);
     }
 
-    public CBTSession continueSession(String userId, Long sessionId) {
+    @PostMapping("/{sessionId}/continue")
+    public CBTSession continueSession(@RequestParam String userId, @PathVariable Long sessionId) {
         return sessionService.continueSession(userId, sessionId);
     }
 
-    public void endSession(String userId, Long sessionId) {
+    @PostMapping("/{sessionId}/end")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void endSession(@RequestParam String userId, @PathVariable Long sessionId) {
         sessionService.endSession(userId, sessionId);
     }
 }

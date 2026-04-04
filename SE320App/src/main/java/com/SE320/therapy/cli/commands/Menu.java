@@ -7,25 +7,22 @@ import java.util.function.Supplier;
 
 import org.springframework.stereotype.Component;
 
-import com.SE320.therapy.controller.SessionController;
-
 @Component
 public class Menu implements Command {
 
     private final Scanner scanner;
     private final UserCommands userCommands;
-    private final SessionController sessionController;
+    private final SessionCommands sessionCommands;
     private final DiaryCommands diaryCommands;
     private final Supplier<UUID> currentUserIdSupplier;
 
     public Menu(Scanner scanner,
                 UserCommands userCommands,
-                SessionController sessionController,
-                DiaryCommands diaryCommands,
-                Supplier<UUID> currentUserIdSupplier) {
+                SessionCommands sessionCommands,
+                DiaryCommands diaryCommands, Supplier<UUID> currentUserIdSupplier){
         this.scanner = scanner;
         this.userCommands = userCommands;
-        this.sessionController = sessionController;
+        this.sessionCommands = sessionCommands;
         this.diaryCommands = diaryCommands;
         this.currentUserIdSupplier = currentUserIdSupplier;
     }
@@ -42,7 +39,7 @@ public class Menu implements Command {
 
             switch (choice) {
                 case "1", "authentication", "auth" -> userCommands.execute();
-                case "2", "session", "sessions" -> executeSessionMenu();
+                case "2", "session", "sessions" -> sessionCommands.execute();
                 case "3", "diary" -> diaryCommands.execute();
                 case "4", "dashboard" -> System.out.println("Dashboard commands are not available yet.");
                 case "5", "crisis" -> System.out.println("Crisis commands are not available yet.");
@@ -52,42 +49,7 @@ public class Menu implements Command {
                 default -> System.out.println("Please choose a valid menu option.");
             }
         }
-    }
-
-    private void executeSessionMenu() {
-        boolean running = true;
-
-        printSessionMenu();
-
-        while (running) {
-            System.out.print("Session command: ");
-            String choice = scanner.nextLine().trim().toLowerCase(Locale.ROOT);
-
-            switch (choice) {
-                case "1", "library" -> new ViewSessionLibraryCommand(sessionController).execute();
-                case "2", "start" -> {
-                    String userId = getCurrentUserIdAsString();
-                    if (userId == null) {
-                        System.out.println("You must be logged in to start a session.");
-                    } else {
-                        new StartNewSessionCommand(sessionController, scanner, userId).execute();
-                    }
-                }
-                case "3", "history" -> {
-                    String userId = getCurrentUserIdAsString();
-                    if (userId == null) {
-                        System.out.println("You must be logged in to view session history.");
-                    } else {
-                        new ViewSessionHistoryCommand(sessionController, userId).execute();
-                    }
-                }
-                case "help" -> printSessionMenu();
-                case "4", "back" -> running = false;
-                default -> System.out.println("Please choose a valid session option.");
-            }
-        }
-    }
-
+    
     private String getCurrentUserIdAsString() {
         UUID currentUserId = currentUserIdSupplier.get();
         return currentUserId != null ? currentUserId.toString() : null;
@@ -104,17 +66,6 @@ public class Menu implements Command {
         System.out.println("6. Settings");
         System.out.println("7. Exit");
         System.out.println("Type a menu name, number, or help.");
-        System.out.println();
-    }
-
-    private void printSessionMenu() {
-        System.out.println();
-        System.out.println("=== Session Menu ===");
-        System.out.println("1. library");
-        System.out.println("2. start");
-        System.out.println("3. history");
-        System.out.println("4. back");
-        System.out.println("Type a command name, number, or help.");
         System.out.println();
     }
 
