@@ -1,16 +1,20 @@
 package com.SE320.therapy.entity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
-import com.SE320.therapy.entity.User;
-
 import jakarta.persistence.Column;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
@@ -32,6 +36,18 @@ public class DiaryEntry {
     @Column(name = "automatic_thought", nullable = false, columnDefinition = "TEXT")
     private String automaticThought;
 
+    @ElementCollection
+    @CollectionTable(name = "diary_entry_emotions", joinColumns = @JoinColumn(name = "diary_entry_id"))
+    private List<EmotionRating> emotions = new ArrayList<>();
+
+    @ManyToMany
+    @JoinTable(
+        name = "diary_entry_distortions",
+        joinColumns = @JoinColumn(name = "diary_entry_id"),
+        inverseJoinColumns = @JoinColumn(name = "distortion_id")
+    )
+    private List<CognitiveDistortion> distortions = new ArrayList<>();
+
     @Column(name = "alternative_thought", nullable = false, columnDefinition = "TEXT")
     private String alternativeThought;
 
@@ -41,11 +57,17 @@ public class DiaryEntry {
     @Column(name = "mood_after", nullable = false)
     private int moodAfter;
 
+    @Column(name = "belief_rating_before")
+    private Integer beliefRatingBefore;
+
+    @Column(name = "belief_rating_after")
+    private Integer beliefRatingAfter;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "deleted", nullable = false)
-    private boolean deleted;
+    private Boolean deleted;
 
     public DiaryEntry() {
     }
@@ -71,6 +93,9 @@ public class DiaryEntry {
         }
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
+        }
+        if (deleted == null) {
+            deleted = false;
         }
     }
 
@@ -106,6 +131,22 @@ public class DiaryEntry {
         this.automaticThought = automaticThought;
     }
 
+    public List<EmotionRating> getEmotions() {
+        return emotions;
+    }
+
+    public void setEmotions(List<EmotionRating> emotions) {
+        this.emotions = emotions;
+    }
+
+    public List<CognitiveDistortion> getDistortions() {
+        return distortions;
+    }
+
+    public void setDistortions(List<CognitiveDistortion> distortions) {
+        this.distortions = distortions;
+    }
+
     public String getAlternativeThought() {
         return alternativeThought;
     }
@@ -130,6 +171,22 @@ public class DiaryEntry {
         this.moodAfter = moodAfter;
     }
 
+    public Integer getBeliefRatingBefore() {
+        return beliefRatingBefore;
+    }
+
+    public void setBeliefRatingBefore(Integer beliefRatingBefore) {
+        this.beliefRatingBefore = beliefRatingBefore;
+    }
+
+    public Integer getBeliefRatingAfter() {
+        return beliefRatingAfter;
+    }
+
+    public void setBeliefRatingAfter(Integer beliefRatingAfter) {
+        this.beliefRatingAfter = beliefRatingAfter;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -139,6 +196,10 @@ public class DiaryEntry {
     }
 
     public boolean isDeleted() {
+        return Boolean.TRUE.equals(deleted);
+    }
+
+    public Boolean getDeleted() {
         return deleted;
     }
 

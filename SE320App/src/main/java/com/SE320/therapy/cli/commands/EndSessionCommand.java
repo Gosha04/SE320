@@ -1,25 +1,34 @@
 package com.SE320.therapy.cli.commands;
 
-import com.SE320.therapy.controller.SessionController;
-import com.SE320.therapy.entity.CBTSession;
-
 import java.util.List;
 import java.util.Scanner;
 
+import org.springframework.stereotype.Component;
+
+import com.SE320.therapy.controller.SessionController;
+import com.SE320.therapy.entity.CBTSession;
+
+@Component
 public class EndSessionCommand implements Command {
 
     private final SessionController sessionController;
     private final Scanner scanner;
-    private final String userId;
+    private final UserCommands userCommands;
 
-    public EndSessionCommand(SessionController sessionController, Scanner scanner, String userId) {
+    public EndSessionCommand(SessionController sessionController, Scanner scanner, UserCommands userCommands) {
         this.sessionController = sessionController;
         this.scanner = scanner;
-        this.userId = userId;
+        this.userCommands = userCommands;
     }
 
     @Override
     public void execute() {
+        String userId = userCommands.getCurrentUserIdAsString();
+        if (userId == null) {
+            System.out.println("You must be logged in to end a session.");
+            return;
+        }
+
         try {
             List<CBTSession> history = sessionController.viewSessionHistory(userId);
 
