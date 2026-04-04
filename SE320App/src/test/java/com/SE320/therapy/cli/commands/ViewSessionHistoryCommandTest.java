@@ -11,6 +11,8 @@ import java.io.PrintStream;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Scanner;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
@@ -25,7 +27,7 @@ public class ViewSessionHistoryCommandTest {
     }
 
     private String runCommand(String userId) {
-        ViewSessionHistoryCommand command = new ViewSessionHistoryCommand(sessionController, userId);
+        ViewSessionHistoryCommand command = new ViewSessionHistoryCommand(sessionController, userCommandsFor(userId));
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream originalOut = System.out;
@@ -38,6 +40,10 @@ public class ViewSessionHistoryCommandTest {
         }
 
         return outputStream.toString();
+    }
+
+    private UserCommands userCommandsFor(String userId) {
+        return new StubUserCommands(userId);
     }
 
     @Test
@@ -81,5 +87,32 @@ public class ViewSessionHistoryCommandTest {
         String output = runCommand("");
 
         assertTrue(output.contains("User ID is required."));
+    }
+
+    @Test
+    void execute_requiresAuthenticatedUser() {
+        String output = runCommand(null);
+
+        assertTrue(output.contains("You must be logged in to view session history."));
+        verify(sessionController, never()).viewSessionHistory(anyString());
+    }
+
+    private static final class StubUserCommands extends UserCommands {
+        private final String userId;
+
+        private StubUserCommands(String userId) {
+            super(null, new Scanner(new java.io.ByteArrayInputStream(new byte[0])));
+            this.userId = userId;
+        }
+
+        @Override
+        public UUID getCurrentUserId() {
+            return userId != null ? UUID.fromString("11111111-1111-1111-1111-111111111111") : null;
+        }
+
+        @Override
+        public String getCurrentUserIdAsString() {
+            return userId;
+        }
     }
 }

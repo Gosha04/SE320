@@ -1,22 +1,31 @@
 package com.SE320.therapy.cli.commands;
 
+import java.util.List;
+
+import org.springframework.stereotype.Component;
+
 import com.SE320.therapy.controller.SessionController;
 import com.SE320.therapy.entity.CBTSession;
 
-import java.util.List;
-
+@Component
 public class ViewSessionHistoryCommand implements Command {
 
     private final SessionController sessionController;
-    private final String userId;
+    private final UserCommands userCommands;
 
-    public ViewSessionHistoryCommand(SessionController sessionController, String userId) {
+    public ViewSessionHistoryCommand(SessionController sessionController, UserCommands userCommands) {
         this.sessionController = sessionController;
-        this.userId = userId;
+        this.userCommands = userCommands;
     }
 
     @Override
     public void execute() {
+        String userId = userCommands.getCurrentUserIdAsString();
+        if (userId == null) {
+            System.out.println("You must be logged in to view session history.");
+            return;
+        }
+
         try {
             System.out.println("\n--- Session History ---");
             List<CBTSession> history = sessionController.viewSessionHistory(userId);
