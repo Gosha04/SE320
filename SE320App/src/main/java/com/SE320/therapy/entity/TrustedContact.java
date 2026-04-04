@@ -2,6 +2,9 @@ package com.SE320.therapy.entity;
 
 import java.util.UUID;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -16,6 +19,7 @@ import jakarta.persistence.Table;
 public class TrustedContact {
 
     @Id
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 

@@ -15,9 +15,20 @@ import java.util.UUID;
 @Repository
 public interface DiaryEntryRepository extends JpaRepository<DiaryEntry, UUID> {
 
-    List<DiaryEntry> findByUser_IdAndDeletedFalse(UUID userId);
+    @Query("""
+        select e
+        from DiaryEntry e
+        where e.user.id = :userId and e.deleted = false
+        """)
+    List<DiaryEntry> findByUser_IdAndDeletedFalse(@Param("userId") UUID userId);
 
-    Page<DiaryEntry> findByUser_IdAndDeletedFalseOrderByCreatedAtDesc(UUID userId, Pageable pageable);
+    @Query("""
+        select e
+        from DiaryEntry e
+        where e.user.id = :userId and e.deleted = false
+        order by e.createdAt desc
+        """)
+    Page<DiaryEntry> findByUser_IdAndDeletedFalseOrderByCreatedAtDesc(@Param("userId") UUID userId, Pageable pageable);
 
     @Query("""
         select d.id as distortionId, d.name as distortionName, count(d) as usageCount
@@ -36,7 +47,12 @@ public interface DiaryEntryRepository extends JpaRepository<DiaryEntry, UUID> {
         """)
     Double calculateAverageMoodImprovement(@Param("userId") UUID userId);
 
-    Optional<DiaryEntry> findByIdAndDeletedFalse(UUID entryId);
+    @Query("""
+        select e
+        from DiaryEntry e
+        where e.id = :entryId and e.deleted = false
+        """)
+    Optional<DiaryEntry> findByIdAndDeletedFalse(@Param("entryId") UUID entryId);
 
     interface DistortionUsageView {
         String getDistortionId();

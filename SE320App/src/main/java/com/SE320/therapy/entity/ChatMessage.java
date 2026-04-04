@@ -3,6 +3,9 @@ package com.SE320.therapy.entity;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import com.SE320.therapy.objects.ChatRole;
 import com.SE320.therapy.objects.InteractionModality;
 
@@ -22,6 +25,7 @@ import jakarta.persistence.Table;
 public class ChatMessage {
 
     @Id
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 

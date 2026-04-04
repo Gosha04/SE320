@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import com.SE320.therapy.objects.UserSessionStatus;
 
 import jakarta.persistence.Column;
@@ -26,6 +29,7 @@ import jakarta.validation.constraints.Min;
 public class UserSession {
 
     @Id
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 

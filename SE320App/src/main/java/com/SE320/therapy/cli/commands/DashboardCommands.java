@@ -142,7 +142,7 @@ public class DashboardCommands implements Command {
             AchievementResponse response = dashboardController.createAchievement(targetUserId, request);
 
             System.out.println("Achievement created successfully.");
-            printAchievement(response);
+            System.out.println(response.toString());
         } catch (IllegalArgumentException | ResponseStatusException e) {
             System.out.println("Unable to create achievement: " + e.getMessage());
         } catch (Exception e) {
@@ -165,7 +165,7 @@ public class DashboardCommands implements Command {
             AchievementResponse response = dashboardController.updateAchievement(targetUserId, achievementId, request);
 
             System.out.println("Achievement updated successfully.");
-            printAchievement(response);
+            System.out.println(response.toString());
         } catch (IllegalArgumentException | ResponseStatusException e) {
             System.out.println("Unable to update achievement: " + e.getMessage());
         } catch (Exception e) {
@@ -301,10 +301,7 @@ public class DashboardCommands implements Command {
 
         System.out.println("Achievements:");
         for (Achievement achievement : dashboard.getAchievements()) {
-            System.out.println("  " + achievement.getId() + " | " + achievement.getTitle()
-                    + " | unlocked=" + achievement.isUnlocked()
-                    + " | month=" + achievement.getUnlockedMonth());
-            System.out.println("    " + achievement.getDescription());
+            System.out.println(achievement.toString());
         }
     }
 
@@ -317,17 +314,7 @@ public class DashboardCommands implements Command {
         System.out.println();
         System.out.println("Achievements for " + targetUserId + ":");
         for (AchievementResponse achievement : achievements) {
-            printAchievement(achievement);
+            System.out.println(achievement.toString());
         }
-    }
-
-    private void printAchievement(AchievementResponse achievement) {
-        System.out.println("Achievement ID: " + achievement.id());
-        System.out.println("User ID: " + achievement.userId());
-        System.out.println("Title: " + achievement.title());
-        System.out.println("Description: " + achievement.description());
-        System.out.println("Unlocked: " + achievement.unlocked());
-        System.out.println("Unlocked month: " + achievement.unlockedMonth());
-        System.out.println();
     }
 }

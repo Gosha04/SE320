@@ -106,7 +106,7 @@ public class Authentication implements AuthService {
     }
 
     public User registerUser(UserType userType, String firstName, String lastName,
-                             String email, String rawPassword, Integer phoneNumber) {
+                             String email, String rawPassword, String phoneNumber) {
         if (userType == null || email == null || rawPassword == null) {
             throw new IllegalArgumentException("userType, email, and rawPassword are required");
         }

@@ -7,9 +7,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Scanner;
-import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,8 +33,8 @@ class MenuTest {
     }
 
     @Test
-    void rintsMainMenu() {
-        Menu menu = createMenu("7");
+    void execute_printsMainMenu() {
+        Menu menu = createMenu("7\n");
 
         menu.execute();
 
@@ -48,10 +46,10 @@ class MenuTest {
     }
 
     @Test
-    void shouldPrintMenu() {
+    void execute_routesToAuthenticationCommands() {
         CountingUserCommands userCommands = new CountingUserCommands();
-        Menu menu = createMenu(userCommands, new CountingSessionCommands(), new CountingNewDiaryEntryCommand(),
-                new CountingViewDiaryEntriesCommand(), new CountingViewDiaryInsightsCommand(), "auth", "exit");
+        Menu menu = createMenu(userCommands, new CountingSessionCommands(), new CountingDiaryCommands(),
+                new CountingDashboardCommands(), "auth\n7\n");
 
         menu.execute();
 
@@ -59,12 +57,32 @@ class MenuTest {
     }
 
     @Test
-    void shouldHandleDashboardAndOtherResponses() {
+    void execute_routesToSessionCommands() {
+        CountingSessionCommands sessionCommands = new CountingSessionCommands();
+        Menu menu = createMenu(new CountingUserCommands(), sessionCommands, new CountingDiaryCommands(),
+                new CountingDashboardCommands(), "session\n7\n");
+
+        menu.execute();
+
+        assertEquals(1, sessionCommands.executeCalls);
+    }
+
+    @Test
+    void execute_routesToDiaryCommands() {
+        CountingDiaryCommands diaryCommands = new CountingDiaryCommands();
+        Menu menu = createMenu(new CountingUserCommands(), new CountingSessionCommands(), diaryCommands,
+                new CountingDashboardCommands(), "3\n7\n");
+
+        menu.execute();
+
+        assertEquals(1, diaryCommands.executeCalls);
+    }
+
+    @Test
+    void execute_handlesDashboardAndStaticOptions() {
         CountingDashboardCommands dashboardCommands = new CountingDashboardCommands();
-        Menu menu = createMenu(new CountingUserCommands(), new RecordingSessionController(),
-                new CountingNewDiaryEntryCommand(), new CountingViewDiaryEntriesCommand(),
-                new CountingViewDiaryInsightsCommand(), dashboardCommands, new FixedUserIdSupplier(null),
-                "dashboard", "crisis", "settings", "bad-option", " HELP ", "Exit");
+        Menu menu = createMenu(new CountingUserCommands(), new CountingSessionCommands(), new CountingDiaryCommands(),
+                dashboardCommands, "dashboard\ncrisis\nsettings\nbad-option\nhelp\nexit\n");
 
         menu.execute();
 
@@ -76,94 +94,19 @@ class MenuTest {
         assertEquals(2, countOccurrences(output, "=== Main Menu ==="));
     }
 
-    @Test
-    void shouldHandleInjections() {
-        CountingNewDiaryEntryCommand newEntry = new CountingNewDiaryEntryCommand();
-        CountingViewDiaryEntriesCommand viewEntries = new CountingViewDiaryEntriesCommand();
-        CountingViewDiaryInsightsCommand viewInsights = new CountingViewDiaryInsightsCommand();
-        Menu menu = createMenu(new CountingUserCommands(), new CountingSessionCommands(), newEntry,
-                viewEntries, viewInsights, "3", "1", "2", "3", "4", "7");
-
-        menu.execute();
-
-        assertEquals(1, newEntry.executeCalls);
-        assertEquals(1, viewEntries.executeCalls);
-        assertEquals(1, viewInsights.executeCalls);
-        assertTrue(getOutput().contains("=== Diary Menu ==="));
+    private Menu createMenu(String input) {
+        return createMenu(new CountingUserCommands(), new CountingSessionCommands(), new CountingDiaryCommands(),
+                new CountingDashboardCommands(), input);
     }
 
-    @Test
-    void shouldHandleInvalid() {
-        Menu menu = createMenu("diary", "unknown", "help", "back", "exit");
-
-        menu.execute();
-
-        String output = getOutput();
-        assertTrue(output.contains("Please choose a valid diary option."));
-        assertEquals(2, countOccurrences(output, "=== Diary Menu ==="));
+    private Menu createMenu(UserCommands userCommands,
+                            SessionCommands sessionCommands,
+                            DiaryCommands diaryCommands,
+                            DashboardCommands dashboardCommands,
+                            String input) {
+        Scanner scanner = new Scanner(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
+        return new Menu(scanner, userCommands, sessionCommands, diaryCommands, dashboardCommands);
     }
-
-    @Test
-    void shouldDisplaySessions() {
-        CountingSessionCommands sessionCommands = new CountingSessionCommands();
-        Menu menu = createMenu(new CountingUserCommands(), sessionCommands, new CountingNewDiaryEntryCommand(),
-                new CountingViewDiaryEntriesCommand(), new CountingViewDiaryInsightsCommand(),
-                new FixedUserIdSupplier(null), "session", "library", "back", "exit");
-
-        menu.execute();
-
-        assertEquals(1, sessionCommands.executeCalls);
-    }
-
-    @Test
-    void userRequiredForSessionStart() {
-        CountingSessionCommands sessionCommands = new CountingSessionCommands();
-        Menu menu = createMenu(new CountingUserCommands(), sessionCommands,
-                new CountingNewDiaryEntryCommand(), new CountingViewDiaryEntriesCommand(),
-                new CountingViewDiaryInsightsCommand(), currentUserIdSupplier, "session", "start", "back", "exit");
-
-        menu.execute();
-
-        assertEquals(1, sessionCommands.executeCalls);
-    }
-
-    @Test
-    void userRequiredForSessionView() {
-        CountingSessionCommands sessionCommands = new CountingSessionCommands();
-        Menu menu = createMenu(new CountingUserCommands(), sessionCommands,
-                new CountingNewDiaryEntryCommand(), new CountingViewDiaryEntriesCommand(),
-                new CountingViewDiaryInsightsCommand(), currentUserIdSupplier, "session", "history", "back", "exit");
-
-        menu.execute();
-
-        assertEquals(1, sessionCommands.executeCalls);
-    }
-
-    @Test
-    void shouldHandleInvalidSession() {
-        RecordingSessionController sessionController = new RecordingSessionController();
-        Menu menu = createMenu(new CountingUserCommands(), sessionController, new CountingNewDiaryEntryCommand(),
-                new CountingViewDiaryEntriesCommand(), new CountingViewDiaryInsightsCommand(),
-                new FixedUserIdSupplier(null), "2", "invalid", "help", "4", "7");
-
-        menu.execute();
-
-        assertEquals(1, countOccurrences(getOutput(), "=== Main Menu ==="));
-    }
-
-    private Menu createMenu(String... lines) {
-        return createMenu(
-                new CountingUserCommands(),
-                new CountingSessionCommands(),
-                new CountingNewDiaryEntryCommand(),
-                new CountingViewDiaryEntriesCommand(),
-                new CountingViewDiaryInsightsCommand(),
-                new FixedUserIdSupplier(null),
-                lines);
-    }
-
-    // Assorted helpers for test state
-    private void createMenu(){}; // Cleared for merge sake, will add back in later
 
     private String getOutput() {
         return outputStream.toString(StandardCharsets.UTF_8);
@@ -186,11 +129,11 @@ class MenuTest {
         }
     }
 
-    private static final class CountingNewDiaryEntryCommand extends NewDiaryEntryCommand {
+    private static final class CountingSessionCommands extends SessionCommands {
         private int executeCalls;
 
-        private CountingNewDiaryEntryCommand() {
-            super(null, new Scanner(new ByteArrayInputStream(new byte[0])), () -> null);
+        private CountingSessionCommands() {
+            super(null, new Scanner(new ByteArrayInputStream(new byte[0])), new CountingUserCommands());
         }
 
         @Override
@@ -199,24 +142,11 @@ class MenuTest {
         }
     }
 
-    private static final class CountingViewDiaryEntriesCommand extends ViewDiaryEntriesCommand {
+    private static final class CountingDiaryCommands extends DiaryCommands {
         private int executeCalls;
 
-        private CountingViewDiaryEntriesCommand() {
-            super(null, () -> null);
-        }
-
-        @Override
-        public void execute() {
-            executeCalls++;
-        }
-    }
-
-    private static final class CountingViewDiaryInsightsCommand extends ViewDiaryInsightsCommand {
-        private int executeCalls;
-
-        private CountingViewDiaryInsightsCommand() {
-            super(null, () -> null);
+        private CountingDiaryCommands() {
+            super(new Scanner(new ByteArrayInputStream(new byte[0])), null, null);
         }
 
         @Override
@@ -230,20 +160,6 @@ class MenuTest {
 
         private CountingDashboardCommands() {
             super(null, new CountingUserCommands(), new Scanner(new ByteArrayInputStream(new byte[0])));
-        }
-
-        @Override
-        public void execute() {
-            executeCalls++;
-        }
-    }
-
-    private static final class RecordingSessionController extends SessionController {
-        private int viewSessionLibraryCalls;
-        private List<String> library = List.of();
-
-        private RecordingSessionController() {
-            super(new SessionService(Mockito.mock(SessionRepository.class)));
         }
 
         @Override

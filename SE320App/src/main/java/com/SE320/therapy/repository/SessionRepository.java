@@ -3,15 +3,23 @@ package com.SE320.therapy.repository;
 import com.SE320.therapy.entity.CBTSession;
 import com.SE320.therapy.objects.SessionStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
-public interface SessionRepository extends JpaRepository<CBTSession, Long> {
+@Repository
+public interface SessionRepository extends JpaRepository<CBTSession, UUID> {
 
-    List<CBTSession> findByUserId(String userId);
+    @Query("select s from CBTSession s where s.userId = :userId")
+    List<CBTSession> findByUserId(@Param("userId") String userId);
 
-    Optional<CBTSession> findBySessionIdAndUserId(Long sessionId, String userId);
+    @Query("select s from CBTSession s where s.sessionId = :sessionId and s.userId = :userId")
+    Optional<CBTSession> findBySessionIdAndUserId(@Param("sessionId") Long sessionId, @Param("userId") String userId);
 
-    boolean existsByUserIdAndStatus(String userId, SessionStatus status);
+    @Query("select count(s) > 0 from CBTSession s where s.userId = :userId and s.status = :status")
+    boolean existsByUserIdAndStatus(@Param("userId") String userId, @Param("status") SessionStatus status);
 }

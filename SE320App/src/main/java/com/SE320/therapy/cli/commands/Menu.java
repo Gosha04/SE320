@@ -2,9 +2,6 @@ package com.SE320.therapy.cli.commands;
 
 import java.util.Locale;
 import java.util.Scanner;
-import java.util.UUID;
-import java.util.function.Supplier;
-
 import org.springframework.stereotype.Component;
 
 @Component
@@ -14,20 +11,18 @@ public class Menu implements Command {
     private final UserCommands userCommands;
     private final SessionCommands sessionCommands;
     private final DiaryCommands diaryCommands;
-    private final DashboardCommands dashboardCommands;
-    private final Supplier<UUID> currentUserIdSupplier;
-  
-
+    private final DashboardCommands dashboardCommands;  
+    
     public Menu(Scanner scanner,
                 UserCommands userCommands,
                 SessionCommands sessionCommands,
-                DiaryCommands diaryCommands, Supplier<UUID> currentUserIdSupplier){
+                DiaryCommands diaryCommands,
+                DashboardCommands dashboardCommands) {
         this.scanner = scanner;
         this.userCommands = userCommands;
         this.sessionCommands = sessionCommands;
         this.diaryCommands = diaryCommands;
         this.dashboardCommands = dashboardCommands;
-        this.currentUserIdSupplier = currentUserIdSupplier;
     }
 
     @Override
@@ -37,7 +32,7 @@ public class Menu implements Command {
         printMainMenu();
 
         while (running) {
-            System.out.print("Select an area: ");
+            System.out.print("\nSelect an area: ");
             String choice = scanner.nextLine().trim().toLowerCase(Locale.ROOT);
 
             switch (choice) {
@@ -52,15 +47,10 @@ public class Menu implements Command {
                 default -> System.out.println("Please choose a valid menu option.");
             }
         }
-    
-    private String getCurrentUserIdAsString() {
-        UUID currentUserId = currentUserIdSupplier.get();
-        return currentUserId != null ? currentUserId.toString() : null;
     }
 
     private void printMainMenu() {
-        System.out.println();
-        System.out.println("=== Main Menu ===");
+        System.out.println("\n=== Main Menu ===");
         System.out.println("1. Authentication");
         System.out.println("2. Session");
         System.out.println("3. Diary");
@@ -68,19 +58,6 @@ public class Menu implements Command {
         System.out.println("5. Crisis");
         System.out.println("6. Settings");
         System.out.println("7. Exit");
-        System.out.println("Type a menu name, number, or help.");
-        System.out.println();
-    }
-
-    // Should be done in diary menu
-    private void printDiaryMenu() {
-        System.out.println();
-        System.out.println("=== Diary Menu ===");
-        System.out.println("1. new");
-        System.out.println("2. entries");
-        System.out.println("3. insights");
-        System.out.println("4. back");
-        System.out.println("Type a command name, number, or help.");
-        System.out.println();
+        System.out.println("Type a menu name, number, or help.\n");
     }
 }

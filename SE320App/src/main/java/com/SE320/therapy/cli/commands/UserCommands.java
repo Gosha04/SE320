@@ -86,7 +86,7 @@ public class UserCommands implements Command {
             String email = scanner.nextLine().trim();
             System.out.print("Password: ");
             String password = scanner.nextLine();
-            Integer phoneNumber = readPhoneNumber();
+            String phoneNumber = readPhoneNumber();
 
             AuthResponse response = userController.register(new RegisterRequest(
                 userType,
@@ -205,16 +205,16 @@ public class UserCommands implements Command {
         }
     }
 
-    private Integer readPhoneNumber() {
+    private String readPhoneNumber() {
         while (true) {
             System.out.print("Phone number: ");
             String input = scanner.nextLine().trim();
 
-            try {
-                return Integer.valueOf(input);
-            } catch (NumberFormatException ignored) {
-                System.out.println("Please enter a valid phone number.");
+            if (!input.isBlank()) {
+                return input;
             }
+
+            System.out.println("Please enter a valid phone number.");
         }
     }
 

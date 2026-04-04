@@ -10,6 +10,6 @@ public record UserResponse(
     String firstName,
     String lastName,
     String email,
-    Integer phoneNumber,
+    String phoneNumber,
     boolean online
 ) {}

@@ -3,6 +3,9 @@ package com.SE320.therapy.entity;
 import java.time.Month;
 import java.util.UUID;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -19,6 +22,7 @@ import jakarta.persistence.Table;
 public class Achievement {
 
     @Id
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
@@ -58,11 +62,21 @@ public class Achievement {
         }
     }
 
+    public String toString() {
+        return "Achievement {\n"
+                + "id=" + id + "\n"
+                + "title=" + title + "\n"
+                + "description=" + description + "\n"
+                + "unlocked=" + unlocked + "\n"
+                + "unlockedMonth=" + unlockedMonth + "\n"
+                + "}";
+    }
+
     public UUID getId() {
         return id;
     }
 
-    public void setId(UUID id) {
+    private void setId(UUID id) {
         this.id = id;
     }
 
@@ -70,7 +84,7 @@ public class Achievement {
         return user;
     }
 
-    public void setUser(User user) {
+    private void setUser(User user) {
         this.user = user;
     }
 

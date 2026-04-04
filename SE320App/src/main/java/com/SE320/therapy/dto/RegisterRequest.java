@@ -8,5 +8,5 @@ public record RegisterRequest(
     String lastName,
     String email,
     String password,
-    Integer phoneNumber
+    String phoneNumber
 ) {}

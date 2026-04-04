@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import com.SE320.therapy.objects.OnboardingPath;
 import com.SE320.therapy.objects.SeverityLevel;
 import com.SE320.therapy.objects.UserType;
@@ -18,12 +21,12 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
 
 @Entity
 @Table(name = "users")
 public class User {
     @Id
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
@@ -65,35 +68,18 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<TrustedContact> trustedContacts = new ArrayList<>();
 
-    // Backwards-compatible transient fields used by existing service/controller
-    // code.
-    @Transient
-    private UserType legacyUserType;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "user_type")
+    private UserType userType;
 
-    @Transient
-    private Integer legacyPhoneNumber;
+    @Column(name = "phone")
+    private String phoneNumber;
 
-    @Transient
-    private boolean legacyOnline;
-
-    public User(UUID id, String email, String passwordHash, String name, Boolean onboardingComplete,
-            OnboardingPath onboardingPath, SeverityLevel severityLevel, Integer streakDays,
-            LocalDateTime createdAt, LocalDateTime updatedAt) {
-        this.id = id;
-        this.email = email;
-        this.passwordHash = passwordHash;
-        this.name = name;
-        this.onboardingComplete = onboardingComplete;
-        this.onboardingPath = onboardingPath;
-        this.severityLevel = severityLevel;
-        this.streakDays = streakDays;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.legacyOnline = false;
-    }
+    @Column(name = "online_status", nullable = false)
+    private boolean onlineStatus;
 
     public User(UUID id, UserType userType, String firstName, String lastName,
-            String email, Integer phoneNumber, String passwordHash) {
+            String email, String phoneNumber, String passwordHash) {
         this.id = id;
         this.email = email;
         this.passwordHash = passwordHash;
@@ -102,9 +88,9 @@ public class User {
         this.onboardingPath = null;
         this.severityLevel = null;
         this.streakDays = 0;
-        this.legacyUserType = userType;
-        this.legacyPhoneNumber = phoneNumber;
-        this.legacyOnline = false;
+        this.userType = userType;
+        this.phoneNumber = phoneNumber;
+        this.onlineStatus = false;
     }
 
     public User() {
@@ -210,27 +196,27 @@ public class User {
     }
 
     public UserType getUserType() {
-        return legacyUserType;
+        return userType;
     }
 
     public void setUserType(UserType userType) {
-        this.legacyUserType = userType;
+        this.userType = userType;
     }
 
-    public Integer getPhoneNumber() {
-        return legacyPhoneNumber;
+    public String getPhoneNumber() {
+        return phoneNumber;
     }
 
-    public void setPhoneNumber(Integer phoneNumber) {
-        this.legacyPhoneNumber = phoneNumber;
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 
     public boolean getOnline() {
-        return legacyOnline;
+        return onlineStatus;
     }
 
     public void setOnline(boolean online) {
-        this.legacyOnline = online;
+        this.onlineStatus = online;
     }
 
     public String getFirstName() {
