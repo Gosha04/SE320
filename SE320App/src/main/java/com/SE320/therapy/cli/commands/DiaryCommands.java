@@ -6,11 +6,15 @@ import java.util.Scanner;
 import java.util.UUID;
 import java.util.function.Supplier;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import com.SE320.therapy.dto.DiaryEntryCreateRequest;
+import com.SE320.therapy.dto.DiaryEntryDetail;
 import com.SE320.therapy.dto.DiaryEntrySummary;
 import com.SE320.therapy.dto.DiaryInsights;
+import com.SE320.therapy.dto.DistortionSuggestion;
 import com.SE320.therapy.service.DiaryService;
 
 @Component
@@ -74,6 +78,17 @@ public class DiaryCommands implements Command {
             System.out.print("Automatic thought: ");
             String automaticThought = scanner.nextLine();
 
+            List<DistortionSuggestion> suggestions =
+                    diaryService.suggestDistortions(automaticThought);
+
+            if (!suggestions.isEmpty()) {
+                System.out.println("\nPossible distortions:");
+                for (DistortionSuggestion suggestion : suggestions) {
+                     System.out.println("- " + suggestion.getDistortionId() + " (" + String.format("%.2f", suggestion.getConfidence()) + "): " + suggestion.getReasoning());
+                }
+                System.out.println();
+            }
+
             System.out.print("Alternative thought: ");
             String alternativeThought = scanner.nextLine();
 
@@ -102,7 +117,8 @@ public class DiaryCommands implements Command {
             return;
         }
 
-        List<DiaryEntrySummary> entries = diaryService.getEntries(userId);
+        Page<DiaryEntrySummary> page = diaryService.getEntries(userId, Pageable.unpaged());
+        List<DiaryEntrySummary> entries = page.getContent();
 
         if (entries.isEmpty()) {
             System.out.println("No diary entries found.");
@@ -115,6 +131,40 @@ public class DiaryCommands implements Command {
             System.out.println((i + 1) + ". " + entry.getSituationPreview());
             System.out.println("   Mood: " + entry.getMoodBefore() + " -> " + entry.getMoodAfter());
             System.out.println("   Created: " + entry.getCreatedAt());
+        }
+
+        while (true) {
+            System.out.print("\nEnter an entry number to view full details, or press Enter to go back: ");
+            String input = scanner.nextLine().trim();
+
+            if (input.isEmpty()) {
+                return;
+            }
+
+            try {
+                int choice = Integer.parseInt(input);
+
+                if (choice < 1 || choice > entries.size()) {
+                    System.out.println("Please choose a valid entry number.");
+                    continue;
+                }
+
+                UUID entryId = entries.get(choice - 1).getId();
+                DiaryEntryDetail detail = diaryService.getEntryDetail(entryId);
+
+                System.out.println("\nDiary Entry Details");
+                System.out.println("Situation: " + detail.situation());
+                System.out.println("Automatic thought: " + detail.automaticThought());
+                System.out.println("Alternative thought: " + detail.alternativeThought());
+                System.out.println("Mood: " + detail.moodBefore() + " -> " + detail.moodAfter());
+                System.out.println("Created: " + detail.createdAt());
+                return;
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a valid number.");
+            } catch (IllegalArgumentException e) {
+                System.out.println("Error: " + e.getMessage());
+                return;
+            }
         }
     }
 
