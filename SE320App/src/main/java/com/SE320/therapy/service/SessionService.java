@@ -45,6 +45,13 @@ public class SessionService {
             "Behavioral Activation",
             "Cognitive Restructuring");
 
+    public SessionService() {
+        this.chatMessageRepository = null;
+        this.userRepository = null;
+        this.sessionRepository = null;
+        this.userSessionRepository = null;
+    }
+
     public SessionService(SessionRepository sessionRepository) {
         this(sessionRepository, null, null, null);
     }
