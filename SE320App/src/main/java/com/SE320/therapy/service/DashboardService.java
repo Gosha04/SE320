@@ -6,7 +6,9 @@ import com.SE320.therapy.entity.Achievement;
 import com.SE320.therapy.entity.CBTSession;
 import com.SE320.therapy.entity.DiaryEntry;
 import com.SE320.therapy.entity.User;
+import com.SE320.therapy.objects.BurnoutRecovery;
 import com.SE320.therapy.objects.Dashboard;
+import com.SE320.therapy.objects.MaslachBurnoutInventoryDimensions;
 import com.SE320.therapy.objects.MonthlyTrends;
 import com.SE320.therapy.objects.ProgressPoint;
 import com.SE320.therapy.objects.SessionStatus;
@@ -47,22 +49,39 @@ public class DashboardService {
     }
 
     public Dashboard getDashboard(UUID userId) {
-        if (userId == null) {
-            throw new IllegalArgumentException("User ID is required.");
-        }
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found."));
-
+        User user = getRequiredUser(userId);
         List<DiaryEntry> entries = diaryEntryRepository.findByUser_IdAndDeletedFalse(userId);
         List<CBTSession> sessions = sessionRepository.findByUserId(user.getId().toString());
 
         MonthlyTrends monthlyTrends = buildMonthlyTrends(entries, sessions);
         WeeklyProgress weeklyProgress = buildWeeklyProgress(entries);
+        BurnoutRecovery burnoutRecovery = buildBurnoutRecovery(monthlyTrends, weeklyProgress);
         syncAchievements(user, entries, sessions, weeklyProgress);
         List<Achievement> achievements = achievementRepository.findByUser_Id(userId);
 
-        return new Dashboard(monthlyTrends, weeklyProgress, achievements);
+        return new Dashboard(userId, monthlyTrends, weeklyProgress, burnoutRecovery, achievements);
+    }
+
+    public MonthlyTrends getMonthlyTrends(UUID userId) {
+        User user = getRequiredUser(userId);
+        List<DiaryEntry> entries = diaryEntryRepository.findByUser_IdAndDeletedFalse(userId);
+        List<CBTSession> sessions = sessionRepository.findByUserId(user.getId().toString());
+        return buildMonthlyTrends(entries, sessions);
+    }
+
+    public WeeklyProgress getWeeklyProgress(UUID userId) {
+        getRequiredUser(userId);
+        List<DiaryEntry> entries = diaryEntryRepository.findByUser_IdAndDeletedFalse(userId);
+        return buildWeeklyProgress(entries);
+    }
+
+    public BurnoutRecovery getBurnoutRecovery(UUID userId) {
+        User user = getRequiredUser(userId);
+        List<DiaryEntry> entries = diaryEntryRepository.findByUser_IdAndDeletedFalse(userId);
+        List<CBTSession> sessions = sessionRepository.findByUserId(user.getId().toString());
+        MonthlyTrends monthlyTrends = buildMonthlyTrends(entries, sessions);
+        WeeklyProgress weeklyProgress = buildWeeklyProgress(entries);
+        return buildBurnoutRecovery(monthlyTrends, weeklyProgress);
     }
 
     public List<AchievementResponse> getAchievements(UUID userId) {
@@ -122,6 +141,60 @@ public class DashboardService {
                 .orElseThrow(() -> new IllegalArgumentException("Achievement not found."));
 
         achievementRepository.delete(achievement);
+    }
+
+    private User getRequiredUser(UUID userId) {
+        validateUserId(userId);
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
+    }
+
+    private BurnoutRecovery buildBurnoutRecovery(MonthlyTrends monthlyTrends, WeeklyProgress weeklyProgress) {
+        double improvementRate = monthlyTrends.getImprovementRate();
+        double averageMoodScore = monthlyTrends.getAverageMoodScore();
+        int completedGoals = weeklyProgress.getCompletedGoals();
+
+        double emotionalExhaustion = clampScore(70.0 - (improvementRate * 8.0) - (completedGoals * 4.0));
+        double depersonalization = clampScore(55.0 - (improvementRate * 5.0) - (completedGoals * 3.0));
+        double personalAccomplishment = clampScore(40.0 + (averageMoodScore * 6.0) + (completedGoals * 4.0));
+
+        List<String> recoveryStrategies = new ArrayList<>();
+        recoveryStrategies.add("Schedule one short recovery block each day for rest, reflection, or movement.");
+        recoveryStrategies.add("Review mood patterns weekly to spot stress triggers early.");
+        recoveryStrategies.add("Break demanding tasks into smaller steps to reduce overwhelm.");
+
+        List<String> workLifeBalanceTechniques = new ArrayList<>();
+        workLifeBalanceTechniques.add("Use a clear end-of-day shutdown routine.");
+        workLifeBalanceTechniques.add("Protect at least one uninterrupted personal block outside work.");
+        workLifeBalanceTechniques.add("Batch demanding work into focused windows instead of constant task switching.");
+
+        List<String> boundarySetting = new ArrayList<>();
+        boundarySetting.add("Define response-time expectations so every message does not feel urgent.");
+        boundarySetting.add("Say no to nonessential commitments when energy is low.");
+        boundarySetting.add("Set a hard stop for work and avoid reopening tasks afterward.");
+
+        return new BurnoutRecovery(
+                new MaslachBurnoutInventoryDimensions(
+                        emotionalExhaustion,
+                        depersonalization,
+                        personalAccomplishment
+                ),
+                recoveryStrategies,
+                workLifeBalanceTechniques,
+                boundarySetting
+        );
+    }
+
+    private double clampScore(double value) {
+        if (value < 0.0) {
+            return 0.0;
+        }
+
+        if (value > 100.0) {
+            return 100.0;
+        }
+
+        return Math.round(value * 100.0) / 100.0;
     }
 
     private MonthlyTrends buildMonthlyTrends(List<DiaryEntry> entries, List<CBTSession> sessions) {

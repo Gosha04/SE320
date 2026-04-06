@@ -12,17 +12,23 @@ public class Menu implements Command {
     private final SessionCommands sessionCommands;
     private final DiaryCommands diaryCommands;
     private final DashboardCommands dashboardCommands;  
+    private final CrisisCommands crisisCommands;
+    private final SettingsCommands settingsCommands;
     
     public Menu(Scanner scanner,
                 UserCommands userCommands,
                 SessionCommands sessionCommands,
                 DiaryCommands diaryCommands,
-                DashboardCommands dashboardCommands) {
+                DashboardCommands dashboardCommands,
+                CrisisCommands crisisCommands,
+                SettingsCommands settingsCommands) {
         this.scanner = scanner;
         this.userCommands = userCommands;
         this.sessionCommands = sessionCommands;
         this.diaryCommands = diaryCommands;
         this.dashboardCommands = dashboardCommands;
+        this.crisisCommands = crisisCommands;
+        this.settingsCommands = settingsCommands;
     }
 
     @Override
@@ -40,8 +46,8 @@ public class Menu implements Command {
                 case "2", "session", "sessions" -> sessionCommands.execute();
                 case "3", "diary" -> diaryCommands.execute();
                 case "4", "dashboard" -> dashboardCommands.execute();
-                case "5", "crisis" -> System.out.println("Crisis commands are not available yet.");
-                case "6", "settings" -> System.out.println("Settings commands are not available yet.");
+                case "5", "crisis" -> crisisCommands.execute();
+                case "6", "settings" -> settingsCommands.execute();
                 case "help" -> printMainMenu();
                 case "7", "exit" -> running = false;
                 default -> System.out.println("Please choose a valid menu option.");

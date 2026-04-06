@@ -13,9 +13,13 @@ import com.SE320.therapy.controller.DashboardController;
 import com.SE320.therapy.dto.AchievementRequest;
 import com.SE320.therapy.dto.AchievementResponse;
 import com.SE320.therapy.entity.Achievement;
+import com.SE320.therapy.objects.BurnoutRecovery;
 import com.SE320.therapy.objects.Dashboard;
+import com.SE320.therapy.objects.MaslachBurnoutInventoryDimensions;
+import com.SE320.therapy.objects.MonthlyTrends;
 import com.SE320.therapy.objects.ProgressPoint;
 import com.SE320.therapy.objects.UserType;
+import com.SE320.therapy.objects.WeeklyProgress;
 
 @Component
 public class DashboardCommands implements Command {
@@ -43,12 +47,15 @@ public class DashboardCommands implements Command {
 
             switch (choice) {
                 case "1", "view" -> handleViewDashboard();
-                case "2", "achievements", "list" -> handleListAchievements();
-                case "3", "create" -> handleCreateAchievement();
-                case "4", "update" -> handleUpdateAchievement();
-                case "5", "delete" -> handleDeleteAchievement();
+                case "2", "monthly" -> handleViewMonthlyTrends();
+                case "3", "weekly" -> handleViewWeeklyProgress();
+                case "4", "burnout" -> handleViewBurnoutRecovery();
+                case "5", "achievements", "list" -> handleListAchievements();
+                case "6", "create" -> handleCreateAchievement();
+                case "7", "update" -> handleUpdateAchievement();
+                case "8", "delete" -> handleDeleteAchievement();
                 case "help" -> printMenu();
-                case "6", "back" -> running = false;
+                case "9", "back" -> running = false;
                 default -> System.out.println("Please choose a valid dashboard option.");
             }
         }
@@ -58,11 +65,14 @@ public class DashboardCommands implements Command {
         System.out.println();
         System.out.println("=== Dashboard Menu ===");
         System.out.println("1. view");
-        System.out.println("2. achievements");
-        System.out.println("3. create");
-        System.out.println("4. update");
-        System.out.println("5. delete");
-        System.out.println("6. back");
+        System.out.println("2. monthly");
+        System.out.println("3. weekly");
+        System.out.println("4. burnout");
+        System.out.println("5. achievements");
+        System.out.println("6. create");
+        System.out.println("7. update");
+        System.out.println("8. delete");
+        System.out.println("9. back");
         System.out.println("Patients can only read their own dashboard.");
         System.out.println("Doctors can view any patient's dashboard and manage achievements.");
         System.out.println("Admins can manage achievements, but cannot view dashboard patient information.");
@@ -91,11 +101,103 @@ public class DashboardCommands implements Command {
             }
 
             Dashboard dashboard = dashboardController.getDashboard(targetUserId);
-            printDashboard(dashboard, targetUserId, currentUserId.equals(targetUserId));
+            if (!dashboard.canBeViewedBy(currentUserId, currentUserType)) {
+                System.out.println("You are not allowed to view that dashboard.");
+                return;
+            }
+
+            printDashboard(dashboard, dashboard.getOwnerUserId(), dashboard.isOwnedBy(currentUserId));
         } catch (IllegalArgumentException | ResponseStatusException e) {
             System.out.println("Unable to load dashboard: " + e.getMessage());
         } catch (Exception e) {
             System.out.println("Unable to load dashboard right now.");
+        }
+    }
+
+    private void handleViewMonthlyTrends() {
+        UUID currentUserId = userCommands.getCurrentUserId();
+        UserType currentUserType = userCommands.getCurrentUserType();
+
+        if (currentUserId == null || currentUserType == null) {
+            System.out.println("You must be logged in to access dashboard commands.");
+            return;
+        }
+
+        if (currentUserType == UserType.ADMIN) {
+            System.out.println("Admins are not allowed to access dashboard patient information.");
+            return;
+        }
+
+        try {
+            UUID targetUserId = resolveDashboardUserId(currentUserId, currentUserType);
+            if (targetUserId == null) {
+                return;
+            }
+
+            MonthlyTrends monthlyTrends = dashboardController.getMonthlyTrends(targetUserId);
+            printMonthlyTrends(monthlyTrends, targetUserId, currentUserId.equals(targetUserId));
+        } catch (IllegalArgumentException | ResponseStatusException e) {
+            System.out.println("Unable to load monthly trends: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("Unable to load monthly trends right now.");
+        }
+    }
+
+    private void handleViewWeeklyProgress() {
+        UUID currentUserId = userCommands.getCurrentUserId();
+        UserType currentUserType = userCommands.getCurrentUserType();
+
+        if (currentUserId == null || currentUserType == null) {
+            System.out.println("You must be logged in to access dashboard commands.");
+            return;
+        }
+
+        if (currentUserType == UserType.ADMIN) {
+            System.out.println("Admins are not allowed to access dashboard patient information.");
+            return;
+        }
+
+        try {
+            UUID targetUserId = resolveDashboardUserId(currentUserId, currentUserType);
+            if (targetUserId == null) {
+                return;
+            }
+
+            WeeklyProgress weeklyProgress = dashboardController.getWeeklyProgress(targetUserId);
+            printWeeklyProgress(weeklyProgress, targetUserId, currentUserId.equals(targetUserId));
+        } catch (IllegalArgumentException | ResponseStatusException e) {
+            System.out.println("Unable to load weekly progress: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("Unable to load weekly progress right now.");
+        }
+    }
+
+    private void handleViewBurnoutRecovery() {
+        UUID currentUserId = userCommands.getCurrentUserId();
+        UserType currentUserType = userCommands.getCurrentUserType();
+
+        if (currentUserId == null || currentUserType == null) {
+            System.out.println("You must be logged in to access dashboard commands.");
+            return;
+        }
+
+        if (currentUserType == UserType.ADMIN) {
+            System.out.println("Admins are not allowed to access dashboard patient information.");
+            return;
+        }
+
+        try {
+            UUID targetUserId = resolveDashboardUserId(currentUserId, currentUserType);
+            if (targetUserId == null) {
+                return;
+            }
+
+            BurnoutRecovery burnoutRecovery = dashboardController.getBurnoutRecovery(targetUserId);
+            printBurnoutRecovery(burnoutRecovery, targetUserId, currentUserId.equals(targetUserId));
+        } catch (IllegalArgumentException | ResponseStatusException e) {
+            System.out.println("Unable to load burnout recovery details: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("Unable to load burnout recovery details right now.");
         }
     }
 
@@ -212,18 +314,25 @@ public class DashboardCommands implements Command {
             return currentUserId;
         }
 
-        System.out.print("Patient ID to view (leave blank for your own dashboard): ");
-        String input = scanner.nextLine().trim();
-
-        if (input.isEmpty()) {
-            return currentUserId;
+        if (currentUserType == UserType.ADMIN) {
+            System.out.println("Admins are not allowed to access dashboard patient information.");
+            return null;
         }
 
-        try {
-            return UUID.fromString(input);
-        } catch (IllegalArgumentException e) {
-            System.out.println("Please enter a valid UUID.");
-            return null;
+        while (true) {
+            System.out.print("Patient ID to view: ");
+            String input = scanner.nextLine().trim();
+
+            if (input.isEmpty()) {
+                System.out.println("Doctors must enter a patient UUID.");
+                continue;
+            }
+
+            try {
+                return UUID.fromString(input);
+            } catch (IllegalArgumentException e) {
+                System.out.println("Please enter a valid UUID.");
+            }
         }
     }
 
@@ -283,25 +392,81 @@ public class DashboardCommands implements Command {
     private void printDashboard(Dashboard dashboard, UUID targetUserId, boolean ownDashboard) {
         System.out.println();
         System.out.println(ownDashboard ? "=== Your Dashboard ===" : "=== Dashboard for " + targetUserId + " ===");
-        System.out.println("Month: " + dashboard.getMonthlyTrends().getCurrentMonth());
-        System.out.printf("Average mood score: %.2f%n", dashboard.getMonthlyTrends().getAverageMoodScore());
-        System.out.println("Sessions completed: " + dashboard.getMonthlyTrends().getSessionsCompleted());
-        System.out.println("Journal entries this month: " + dashboard.getMonthlyTrends().getJournalEntriesThisMonth());
-        System.out.printf("Improvement rate: %.2f%n", dashboard.getMonthlyTrends().getImprovementRate());
-        System.out.println("Weekly goals completed: "
-                + dashboard.getWeeklyProgress().getCompletedGoals()
-                + "/"
-                + dashboard.getWeeklyProgress().getTotalGoals());
-        System.out.println("Current streak: " + dashboard.getWeeklyProgress().getCurrentStreak());
-        System.out.println("Weekly progress points:");
-
-        for (ProgressPoint progressPoint : dashboard.getWeeklyProgress().getProgressPoints()) {
-            System.out.println("  " + progressPoint.getLabel() + ": " + progressPoint.getValue());
-        }
-
+        printMonthlyTrendsDetails(dashboard.getMonthlyTrends());
+        printWeeklyProgressDetails(dashboard.getWeeklyProgress());
+        printBurnoutRecoveryDetails(dashboard.getBurnoutRecovery());
         System.out.println("Achievements:");
         for (Achievement achievement : dashboard.getAchievements()) {
             System.out.println(achievement.toString());
+        }
+    }
+
+    private void printMonthlyTrends(MonthlyTrends monthlyTrends, UUID targetUserId, boolean ownDashboard) {
+        System.out.println();
+        System.out.println(ownDashboard ? "=== Your Monthly Trends ===" : "=== Monthly Trends for " + targetUserId + " ===");
+        printMonthlyTrendsDetails(monthlyTrends);
+    }
+
+    private void printMonthlyTrendsDetails(MonthlyTrends monthlyTrends) {
+        System.out.println("Period: " + monthlyTrends.getPeriod());
+        System.out.printf("Average mood score: %.2f%n", monthlyTrends.getAverageMoodScore());
+        System.out.println("Sessions completed: " + monthlyTrends.getSessionsCompleted());
+        System.out.println("Journal entries created: " + monthlyTrends.getJournalEntriesCreated());
+        System.out.printf("Improvement rate: %.2f%n", monthlyTrends.getImprovementRate());
+    }
+
+    private void printWeeklyProgress(WeeklyProgress weeklyProgress, UUID targetUserId, boolean ownDashboard) {
+        System.out.println();
+        System.out.println(ownDashboard ? "=== Your Weekly Progress ===" : "=== Weekly Progress for " + targetUserId + " ===");
+        printWeeklyProgressDetails(weeklyProgress);
+    }
+
+    private void printWeeklyProgressDetails(WeeklyProgress weeklyProgress) {
+        System.out.println("Week starts on: " + weeklyProgress.getWeekStart());
+        System.out.println("Weekly goals completed: "
+                + weeklyProgress.getCompletedGoals()
+                + "/"
+                + weeklyProgress.getTotalGoals());
+        System.out.println("Current streak: " + weeklyProgress.getCurrentStreak());
+        System.out.println("Weekly progress points:");
+
+        if (weeklyProgress.getProgressPoints().isEmpty()) {
+            System.out.println("  No progress points available.");
+            return;
+        }
+
+        for (ProgressPoint progressPoint : weeklyProgress.getProgressPoints()) {
+            System.out.println("  " + progressPoint.getLabel() + ": " + progressPoint.getValue());
+        }
+    }
+
+    private void printBurnoutRecovery(BurnoutRecovery burnoutRecovery, UUID targetUserId, boolean ownDashboard) {
+        System.out.println();
+        System.out.println(ownDashboard ? "=== Your Burnout Recovery ===" : "=== Burnout Recovery for " + targetUserId + " ===");
+        printBurnoutRecoveryDetails(burnoutRecovery);
+    }
+
+    private void printBurnoutRecoveryDetails(BurnoutRecovery burnoutRecovery) {
+        MaslachBurnoutInventoryDimensions dimensions = burnoutRecovery.getMaslachBurnoutInventoryDimensions();
+        System.out.println("Maslach Burnout Inventory dimensions:");
+        System.out.printf("  Emotional exhaustion: %.2f%n", dimensions.getEmotionalExhaustion());
+        System.out.printf("  Depersonalization: %.2f%n", dimensions.getDepersonalization());
+        System.out.printf("  Personal accomplishment: %.2f%n", dimensions.getPersonalAccomplishment());
+        printStringList("Recovery strategies", burnoutRecovery.getRecoveryStrategies());
+        printStringList("Work-life balance techniques", burnoutRecovery.getWorkLifeBalanceTechniques());
+        printStringList("Boundary setting", burnoutRecovery.getBoundarySetting());
+    }
+
+    private void printStringList(String heading, List<String> items) {
+        System.out.println(heading + ":");
+
+        if (items.isEmpty()) {
+            System.out.println("  None available.");
+            return;
+        }
+
+        for (String item : items) {
+            System.out.println("  - " + item);
         }
     }
 
