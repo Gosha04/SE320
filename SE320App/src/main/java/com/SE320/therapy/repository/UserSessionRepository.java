@@ -43,4 +43,17 @@ public interface UserSessionRepository extends JpaRepository<UserSession, UUID> 
         @Param("userId") UUID userId,
         @Param("status") UserSessionStatus status
     );
+
+    @Query("""
+        select us from UserSession us
+        where us.user.id = :userId
+          and us.cbtSession.sessionId = :sessionId
+          and us.status = :status
+        order by us.startedAt desc
+        """)
+    Optional<UserSession> findFirstByUserIdAndSessionIdAndStatusOrderByStartedAtDesc(
+        @Param("userId") UUID userId,
+        @Param("sessionId") Long sessionId,
+        @Param("status") UserSessionStatus status
+    );
 }
