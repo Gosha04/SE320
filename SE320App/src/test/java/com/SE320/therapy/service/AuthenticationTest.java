@@ -141,7 +141,7 @@ class AuthenticationTest {
             "Test",
             "User",
             "test@example.com",
-            1234567890,
+            "1234567890",
             "encoded-password"
         );
         user.setOnline(online);
