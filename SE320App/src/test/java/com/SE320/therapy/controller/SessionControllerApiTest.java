@@ -26,18 +26,17 @@ import com.SE320.therapy.dto.SessionRunResponse;
 import com.SE320.therapy.dto.StartSessionRequest;
 import com.SE320.therapy.exception.ApiException;
 import com.SE320.therapy.exception.ApiExceptionHandler;
-import com.SE320.therapy.service.SessionApiService;
 import com.SE320.therapy.service.SessionService;
 
 class SessionControllerApiTest {
 
     private MockMvc mockMvc;
-    private StubSessionApiService sessionApiService;
+    private StubSessionService sessionService;
 
     @BeforeEach
     void setUp() {
-        sessionApiService = new StubSessionApiService();
-        SessionController controller = new SessionController(new StubSessionService(), sessionApiService);
+        sessionService = new StubSessionService();
+        SessionController controller = new SessionController(sessionService);
 
         LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
         validator.afterPropertiesSet();
@@ -50,7 +49,7 @@ class SessionControllerApiTest {
 
     @Test
     void getSessionLibrary_returnsLibrary() throws Exception {
-        sessionApiService.library = List.of(
+        sessionService.library = List.of(
             new SessionLibraryItemResponse(1001L, "Understanding Thoughts", "Intro", 20, 1, List.of("COGNITIVE"))
         );
 
@@ -62,7 +61,7 @@ class SessionControllerApiTest {
 
     @Test
     void getSessionDetail_returnsDetail() throws Exception {
-        sessionApiService.detail = new SessionDetailResponse(
+        sessionService.detail = new SessionDetailResponse(
             1001L,
             "Understanding Thoughts",
             "Intro",
@@ -84,7 +83,7 @@ class SessionControllerApiTest {
         UUID userId = UUID.fromString("aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb");
         UUID userSessionId = UUID.fromString("11111111-2222-3333-4444-555555555555");
 
-        sessionApiService.startResponse = new SessionRunResponse(
+        sessionService.startResponse = new SessionRunResponse(
             userSessionId,
             userId,
             1001L,
@@ -128,7 +127,7 @@ class SessionControllerApiTest {
     void sendChatMessage_returnsAssistantReply() throws Exception {
         UUID userSessionId = UUID.fromString("11111111-2222-3333-4444-555555555555");
 
-        sessionApiService.chatResponse = new SessionChatResponse(
+        sessionService.chatResponse = new SessionChatResponse(
             userSessionId,
             1001L,
             new ChatMessageResponse(
@@ -163,7 +162,7 @@ class SessionControllerApiTest {
 
     @Test
     void endSession_notFound_returnsStructuredError() throws Exception {
-        sessionApiService.endException = new ApiException(
+        sessionService.endException = new ApiException(
             org.springframework.http.HttpStatus.NOT_FOUND,
             "SESSION_NOT_FOUND",
             "No active session was found for the given user and session.",
@@ -184,12 +183,6 @@ class SessionControllerApiTest {
     }
 
     static class StubSessionService extends SessionService {
-        StubSessionService() {
-            super(null);
-        }
-    }
-
-    static class StubSessionApiService extends SessionApiService {
         List<SessionLibraryItemResponse> library = List.of();
         SessionDetailResponse detail;
         SessionRunResponse startResponse;
@@ -197,8 +190,8 @@ class SessionControllerApiTest {
         SessionRunResponse endResponse;
         RuntimeException endException;
 
-        StubSessionApiService() {
-            super(null, null, null, null);
+        StubSessionService() {
+            super(null);
         }
 
         @Override

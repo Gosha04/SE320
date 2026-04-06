@@ -9,7 +9,6 @@ import com.SE320.therapy.dto.SessionLibraryItemResponse;
 import com.SE320.therapy.dto.SessionRunResponse;
 import com.SE320.therapy.dto.StartSessionRequest;
 import com.SE320.therapy.entity.CBTSession;
-import com.SE320.therapy.service.SessionApiService;
 import com.SE320.therapy.service.SessionService;
 
 import java.util.List;
@@ -39,21 +38,14 @@ import jakarta.validation.constraints.Positive;
 public class SessionController {
 
     private final SessionService sessionService;
-    private final SessionApiService sessionApiService;
 
     // No-arg constructor for subclasses in tests that override methods and don’t need a real service.
     public SessionController() {
         this.sessionService = null;
-        this.sessionApiService = null;
     }
 
     public SessionController(SessionService sessionService) {
-        this(sessionService, null);
-    }
-
-    public SessionController(SessionService sessionService, SessionApiService sessionApiService) {
         this.sessionService = sessionService;
-        this.sessionApiService = sessionApiService;
     }
 
     @Operation(summary = "Get session library", description = "Returns the CBT session library available to start.")
@@ -64,7 +56,7 @@ public class SessionController {
     })
     @GetMapping
     public List<SessionLibraryItemResponse> getSessionLibrary() {
-        return sessionApiService.getSessionLibrary();
+        return sessionService.getSessionLibrary();
     }
 
     @Operation(summary = "Get session details", description = "Returns the details for a CBT session in the library.")
@@ -77,7 +69,7 @@ public class SessionController {
     public SessionDetailResponse getSessionDetail(
         @PathVariable("sessionId") @Positive(message = "sessionId must be a positive number") Long sessionId
     ) {
-        return sessionApiService.getSessionDetail(sessionId);
+        return sessionService.getSessionDetail(sessionId);
     }
 
     @Operation(summary = "Start CBT session", description = "Starts a user session for the selected CBT module.")
@@ -93,7 +85,7 @@ public class SessionController {
         @PathVariable("sessionId") @Positive(message = "sessionId must be a positive number") Long sessionId,
         @Valid @RequestBody StartSessionRequest request
     ) {
-        return sessionApiService.startSession(sessionId, request);
+        return sessionService.startSession(sessionId, request);
     }
 
     @Operation(summary = "Send chat message", description = "Sends a chat message inside an active user session and returns the assistant reply.")
@@ -107,7 +99,7 @@ public class SessionController {
         @PathVariable("sessionId") @Positive(message = "sessionId must be a positive number") Long sessionId,
         @Valid @RequestBody SendChatMessageRequest request
     ) {
-        return sessionApiService.sendChatMessage(sessionId, request);
+        return sessionService.sendChatMessage(sessionId, request);
     }
 
     @Operation(summary = "End session", description = "Ends the active user session for the selected CBT module.")
@@ -121,7 +113,7 @@ public class SessionController {
         @PathVariable("sessionId") @Positive(message = "sessionId must be a positive number") Long sessionId,
         @Valid @RequestBody EndSessionRequest request
     ) {
-        return sessionApiService.endSession(sessionId, request);
+        return sessionService.endSession(sessionId, request);
     }
 
     public List<String> viewSessionLibrary() {
