@@ -1,6 +1,9 @@
 package com.SE320.therapy.cli.commands;
 
 import com.SE320.therapy.controller.SessionController;
+import com.SE320.therapy.dto.EndSessionRequest;
+import com.SE320.therapy.dto.SessionLibraryItemResponse;
+import com.SE320.therapy.dto.SessionRunResponse;
 import com.SE320.therapy.entity.CBTSession;
 import com.SE320.therapy.objects.SessionStatus;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,7 +51,11 @@ public class SessionCommandsTest {
 
     @Test
     void execute_viewsSessionLibrary() {
-        sessionController.library = List.of("Thought Record", "Behavioral Activation", "Cognitive Restructuring");
+        sessionController.library = List.of(
+            new SessionLibraryItemResponse(1001L, "Thought Record", "desc", 20, 1, List.of("COGNITIVE")),
+            new SessionLibraryItemResponse(1002L, "Behavioral Activation", "desc", 20, 2, List.of("BEHAVIORAL")),
+            new SessionLibraryItemResponse(1003L, "Cognitive Restructuring", "desc", 20, 3, List.of("COGNITIVE"))
+        );
 
         String output = runCommands("1\n6\n", "user1");
 
@@ -62,19 +69,23 @@ public class SessionCommandsTest {
 
     @Test
     void execute_startsNewSession_whenValidChoiceIsEntered() {
-        sessionController.library = List.of("Thought Record", "Behavioral Activation", "Cognitive Restructuring");
-        sessionController.sessionToStart = buildSession(1L, "user1", "Thought Record", SessionStatus.ACTIVE);
+        sessionController.library = List.of(
+            new SessionLibraryItemResponse(1001L, "Thought Record", "desc", 20, 1, List.of("COGNITIVE")),
+            new SessionLibraryItemResponse(1002L, "Behavioral Activation", "desc", 20, 2, List.of("BEHAVIORAL")),
+            new SessionLibraryItemResponse(1003L, "Cognitive Restructuring", "desc", 20, 3, List.of("COGNITIVE"))
+        );
+        sessionController.sessionToStart = buildRunResponse(1001L, "Thought Record", "IN_PROGRESS");
 
         String output = runCommands("2\n1\n6\n", "user1");
 
         assertTrue(output.contains("--- Start New Session ---"));
         assertTrue(output.contains("New CBT session started successfully."));
-        assertTrue(output.contains("Session ID: 1"));
-        assertTrue(output.contains("Type: Thought Record"));
-        assertTrue(output.contains("Status: ACTIVE"));
+        assertTrue(output.contains("Session ID: 1001"));
+        assertTrue(output.contains("Title: Thought Record"));
+        assertTrue(output.contains("Status: IN_PROGRESS"));
         assertEquals(1, sessionController.viewSessionLibraryCalls);
-        assertEquals("user1", sessionController.lastStartedUserId);
-        assertEquals("Thought Record", sessionController.lastStartedSessionType);
+        assertEquals(UUID.fromString("11111111-1111-1111-1111-111111111111"), sessionController.lastStartedUserId);
+        assertEquals(1001L, sessionController.lastStartedSessionId);
     }
 
     @Test
@@ -88,48 +99,56 @@ public class SessionCommandsTest {
 
     @Test
     void execute_continuesSession_whenValidSessionIdIsEntered() {
-        sessionController.sessionToContinue = buildSession(1L, "user1", "Thought Record", SessionStatus.ACTIVE);
+        sessionController.sessionToContinue = buildRunResponse(1L, "Thought Record", "IN_PROGRESS");
 
         String output = runCommands("3\n1\n6\n", "user1");
 
         assertTrue(output.contains("Enter session ID to continue:"));
         assertTrue(output.contains("Session continued successfully."));
         assertTrue(output.contains("Session ID: 1"));
-        assertTrue(output.contains("Type: Thought Record"));
-        assertTrue(output.contains("Status: ACTIVE"));
-        assertEquals("user1", sessionController.lastContinuedUserId);
+        assertTrue(output.contains("Title: Thought Record"));
+        assertTrue(output.contains("Status: IN_PROGRESS"));
+        assertEquals(UUID.fromString("11111111-1111-1111-1111-111111111111"), sessionController.lastContinuedUserId);
         assertEquals(1L, sessionController.lastContinuedSessionId);
     }
 
     @Test
     void execute_endsSession_whenValidSessionIdIsEntered() {
-        sessionController.history = List.of(buildSession(1L, "user1", "Thought Record", SessionStatus.ACTIVE));
+        sessionController.history = List.of(buildRunResponse(1L, "Thought Record", "IN_PROGRESS"));
 
         String output = runCommands("4\n1\n6\n", "user1");
 
         assertTrue(output.contains("--- Available Sessions ---"));
         assertTrue(output.contains("Session ID: 1"));
-        assertTrue(output.contains("Type: Thought Record"));
-        assertTrue(output.contains("Status: ACTIVE"));
+        assertTrue(output.contains("Title: Thought Record"));
+        assertTrue(output.contains("Status: IN_PROGRESS"));
         assertTrue(output.contains("Session ended successfully."));
         assertEquals(1, sessionController.viewSessionHistoryCalls);
-        assertEquals("user1", sessionController.lastEndedUserId);
+        assertEquals(UUID.fromString("11111111-1111-1111-1111-111111111111"), sessionController.lastEndedUserId);
         assertEquals(1L, sessionController.lastEndedSessionId);
     }
 
     @Test
     void execute_displaysSessionHistory_whenSessionsExist() {
-        CBTSession session = buildSession(1L, "user1", "Thought Record", SessionStatus.ENDED);
-        session.setStartedAt(LocalDateTime.now().minusMinutes(15));
-        session.setEndedAt(LocalDateTime.now());
+        SessionRunResponse session = new SessionRunResponse(
+            UUID.randomUUID(),
+            UUID.fromString("11111111-1111-1111-1111-111111111111"),
+            1L,
+            "Thought Record",
+            "COMPLETED",
+            4,
+            6,
+            LocalDateTime.now().minusMinutes(15),
+            LocalDateTime.now()
+        );
         sessionController.history = List.of(session);
 
         String output = runCommands("5\n6\n", "user1");
 
         assertTrue(output.contains("--- Session History ---"));
         assertTrue(output.contains("Session ID: 1"));
-        assertTrue(output.contains("Type: Thought Record"));
-        assertTrue(output.contains("Status: ENDED"));
+        assertTrue(output.contains("Title: Thought Record"));
+        assertTrue(output.contains("Status: COMPLETED"));
         assertTrue(output.contains("Started: "));
         assertTrue(output.contains("Ended: "));
         assertEquals(1, sessionController.viewSessionHistoryCalls);
@@ -200,49 +219,64 @@ public class SessionCommandsTest {
     }
 
     private static final class RecordingSessionController extends SessionController {
-        private List<String> library = List.of();
-        private List<CBTSession> history = List.of();
-        private CBTSession sessionToStart;
-        private CBTSession sessionToContinue;
+        private List<SessionLibraryItemResponse> library = List.of();
+        private List<SessionRunResponse> history = List.of();
+        private SessionRunResponse sessionToStart;
+        private SessionRunResponse sessionToContinue;
         private int viewSessionLibraryCalls;
         private int viewSessionHistoryCalls;
-        private String lastStartedUserId;
-        private String lastStartedSessionType;
-        private String lastContinuedUserId;
+        private UUID lastStartedUserId;
+        private Long lastStartedSessionId;
+        private UUID lastContinuedUserId;
         private Long lastContinuedSessionId;
-        private String lastEndedUserId;
+        private UUID lastEndedUserId;
         private Long lastEndedSessionId;
 
         @Override
-        public List<String> viewSessionLibrary() {
+        public List<SessionLibraryItemResponse> getSessionLibrary() {
             viewSessionLibraryCalls++;
             return library;
         }
 
         @Override
-        public CBTSession startNewSession(String userId, String sessionType) {
-            lastStartedUserId = userId;
-            lastStartedSessionType = sessionType;
+        public SessionRunResponse startSession(Long sessionId, com.SE320.therapy.dto.StartSessionRequest request) {
+            lastStartedUserId = request.userId();
+            lastStartedSessionId = sessionId;
             return sessionToStart;
         }
 
         @Override
-        public List<CBTSession> viewSessionHistory(String userId) {
+        public List<SessionRunResponse> getSessionHistory(UUID userId) {
             viewSessionHistoryCalls++;
             return history;
         }
 
         @Override
-        public CBTSession continueSession(String userId, Long sessionId) {
+        public SessionRunResponse continueSession(UUID userId, Long sessionId) {
             lastContinuedUserId = userId;
             lastContinuedSessionId = sessionId;
             return sessionToContinue;
         }
 
         @Override
-        public void endSession(String userId, Long sessionId) {
-            lastEndedUserId = userId;
+        public SessionRunResponse endActiveSession(Long sessionId, EndSessionRequest request) {
+            lastEndedUserId = request.userId();
             lastEndedSessionId = sessionId;
+            return buildRunResponse(sessionId, "Thought Record", "COMPLETED");
         }
+    }
+
+    private static SessionRunResponse buildRunResponse(Long sessionId, String title, String status) {
+        return new SessionRunResponse(
+            UUID.randomUUID(),
+            UUID.fromString("11111111-1111-1111-1111-111111111111"),
+            sessionId,
+            title,
+            status,
+            5,
+            null,
+            LocalDateTime.now(),
+            null
+        );
     }
 }

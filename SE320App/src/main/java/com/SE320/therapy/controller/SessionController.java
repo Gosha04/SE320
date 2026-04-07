@@ -8,10 +8,10 @@ import com.SE320.therapy.dto.SessionDetailResponse;
 import com.SE320.therapy.dto.SessionLibraryItemResponse;
 import com.SE320.therapy.dto.SessionRunResponse;
 import com.SE320.therapy.dto.StartSessionRequest;
-import com.SE320.therapy.entity.CBTSession;
 import com.SE320.therapy.service.SessionService;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -126,23 +125,11 @@ public class SessionController {
         return sessionService.endSession(sessionId, request);
     }
 
-    public List<String> viewSessionLibrary() {
-        return sessionService.viewSessionLibrary();
-    }
-
-    public CBTSession startNewSession(@RequestParam("userId") String userId, @RequestParam("sessionType") String sessionType) {
-        return sessionService.startNewSession(userId, sessionType);
-    }
-
-    public List<CBTSession> viewSessionHistory(@PathVariable("userId") String userId) {
-        return sessionService.viewSessionHistory(userId);
-    }
-
-    public CBTSession continueSession(@RequestParam("userId") String userId, @PathVariable("sessionId") Long sessionId) {
+    public SessionRunResponse continueSession(UUID userId, Long sessionId) {
         return sessionService.continueSession(userId, sessionId);
     }
 
-    public void endSession(@RequestParam("userId") String userId, @PathVariable("sessionId") Long sessionId) {
-        sessionService.endSession(userId, sessionId);
+    public List<SessionRunResponse> getSessionHistory(UUID userId) {
+        return sessionService.getSessionHistory(userId);
     }
 }
