@@ -5,10 +5,12 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import com.SE320.therapy.dto.ApiErrorDetail;
@@ -55,6 +57,26 @@ public class ApiExceptionHandler {
             ? "Invalid request."
             : ex.getMessage();
         return build(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", message, List.of());
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiErrorEnvelope> handleMissingParameter(MissingServletRequestParameterException ex) {
+        return build(
+            HttpStatus.BAD_REQUEST,
+            "VALIDATION_ERROR",
+            "Invalid input provided",
+            List.of(new ApiErrorDetail(ex.getParameterName(), "is required"))
+        );
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiErrorEnvelope> handleUnreadableMessage(HttpMessageNotReadableException ex) {
+        return build(
+            HttpStatus.BAD_REQUEST,
+            "VALIDATION_ERROR",
+            "Invalid input provided",
+            List.of(new ApiErrorDetail(null, "Request body is missing or malformed"))
+        );
     }
 
     @ExceptionHandler(Exception.class)

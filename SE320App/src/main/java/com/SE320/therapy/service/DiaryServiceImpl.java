@@ -3,8 +3,10 @@ package com.SE320.therapy.service;
 import com.SE320.therapy.dto.*;
 import com.SE320.therapy.entity.DiaryEntry;
 import com.SE320.therapy.entity.User;
+import com.SE320.therapy.exception.ApiException;
 import com.SE320.therapy.repository.DiaryEntryRepository;
 import com.SE320.therapy.repository.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -29,7 +31,12 @@ public class DiaryServiceImpl implements DiaryService {
     @Override
     public DiaryEntryResponse createEntry(UUID userId, DiaryEntryCreateRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found."));
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "USER_NOT_FOUND",
+                        "No user was found for the provided userId.",
+                        List.of(new ApiErrorDetail("userId", "No user exists with the provided id"))
+                ));
 
         DiaryEntry entry = new DiaryEntry(
                 UUID.randomUUID(),
@@ -88,7 +95,12 @@ public class DiaryServiceImpl implements DiaryService {
     @Override
     public DiaryEntryDetail getEntryDetail(UUID entryId) {
         DiaryEntry entry = diaryEntryRepository.findByIdAndDeletedFalse(entryId)
-                .orElseThrow(() -> new IllegalArgumentException("Diary entry not found."));
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "DIARY_ENTRY_NOT_FOUND",
+                        "No diary entry was found for the provided entryId.",
+                        List.of(new ApiErrorDetail("entryId", "No active diary entry exists with the provided id"))
+                ));
 
         return new DiaryEntryDetail(
                 entry.getId(),
@@ -105,7 +117,12 @@ public class DiaryServiceImpl implements DiaryService {
     @Override
     public void deleteEntry(UUID entryId) {
         DiaryEntry entry = diaryEntryRepository.findByIdAndDeletedFalse(entryId)
-                .orElseThrow(() -> new IllegalArgumentException("Diary entry not found."));
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "DIARY_ENTRY_NOT_FOUND",
+                        "No diary entry was found for the provided entryId.",
+                        List.of(new ApiErrorDetail("entryId", "No active diary entry exists with the provided id"))
+                ));
 
         entry.setDeleted(true);
         diaryEntryRepository.save(entry);
