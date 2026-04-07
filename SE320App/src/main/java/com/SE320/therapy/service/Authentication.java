@@ -8,8 +8,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -30,7 +28,6 @@ import com.SE320.therapy.repository.UserRepository;
 
 @Service
 public class Authentication implements AuthService {
-    private static final Logger log = LoggerFactory.getLogger(Authentication.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -46,10 +43,8 @@ public class Authentication implements AuthService {
     @Override
     public AuthResponse register(RegisterRequest request) {
         validateRegisterRequest(request);
-        log.info("Registering user with email={} and userType={}", request.email(), request.userType());
 
         if (userRepository.findByEmail(request.email()).isPresent()) {
-            log.warn("Registration blocked because email is already registered: {}", request.email());
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered");
         }
 
@@ -62,7 +57,6 @@ public class Authentication implements AuthService {
             request.phoneNumber()
         );
         setUserOnline(saved, true);
-        log.info("User registered successfully with userId={} and email={}", saved.getId(), saved.getEmail());
         return issueTokens(saved);
     }
 
@@ -71,11 +65,9 @@ public class Authentication implements AuthService {
         if (request == null || request.email() == null || request.password() == null) {
             throw new IllegalArgumentException("email and password are required");
         }
-        log.info("Attempting login for email={}", request.email());
 
         User user = authenticateCredentials(request.email(), request.password());
         setUserOnline(user, true);
-        log.info("Login succeeded for userId={} and email={}", user.getId(), user.getEmail());
         return issueTokens(user);
     }
 
@@ -84,11 +76,9 @@ public class Authentication implements AuthService {
         if (refreshToken == null || refreshToken.isBlank()) {
             throw new IllegalArgumentException("refreshToken is required");
         }
-        log.info("Refreshing access token");
 
         UUID userId = refreshTokens.remove(refreshToken);
         if (userId == null) {
-            log.warn("Refresh token rejected because it was not found");
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid refresh token");
         }
 
@@ -97,7 +87,6 @@ public class Authentication implements AuthService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
 
-        log.info("Token refresh succeeded for userId={}", userId);
         return issueTokens(user);
     }
 
@@ -106,17 +95,14 @@ public class Authentication implements AuthService {
         if (accessToken == null || accessToken.isBlank()) {
             throw new IllegalArgumentException("accessToken is required");
         }
-        log.info("Logging out user from access token");
 
         UUID userId = accessTokens.remove(accessToken);
         if (userId == null) {
-            log.warn("Logout rejected because access token was invalid");
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid access token");
         }
 
         refreshTokens.entrySet().removeIf(entry -> userId.equals(entry.getValue()));
         userRepository.findById(userId).ifPresent(user -> setUserOnline(user, false));
-        log.info("Logout succeeded for userId={}", userId);
     }
 
     public User registerUser(UserType userType, String firstName, String lastName,
@@ -126,19 +112,15 @@ public class Authentication implements AuthService {
         }
         try {
             if (userRepository.findByEmail(email).isPresent()) {
-                log.warn("Registration blocked during persistence because email is already registered: {}", email);
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered");
             }
 
             String hash = passwordEncoder.encode(rawPassword);
             User user = new User(UUID.randomUUID(), userType, firstName, lastName, email, phoneNumber, hash);
-            User saved = userRepository.save(user);
-            log.info("Persisted new user with userId={} and email={}", saved.getId(), saved.getEmail());
-            return saved;
+            return userRepository.save(user);
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Failed to register user for email={}", email, e);
             throw new RuntimeException("Failed to register user", e);
         }
     }
@@ -148,15 +130,10 @@ public class Authentication implements AuthService {
             throw new IllegalArgumentException("email and rawPassword are required");
         }
         try {
-            boolean authenticated = userRepository.findPasswordByEmail(email)
+            return userRepository.findPasswordByEmail(email)
                 .map(hash -> passwordEncoder.matches(rawPassword, hash))
                 .orElse(false);
-            if (!authenticated) {
-                log.warn("Authentication failed for email={}", email);
-            }
-            return authenticated;
         } catch (Exception e) {
-            log.error("Failed to authenticate user for email={}", email, e);
             throw new RuntimeException("Failed to authenticate user", e);
         }
     }
@@ -166,28 +143,23 @@ public class Authentication implements AuthService {
             throw new IllegalArgumentException("userId, email, and rawPassword are required");
         }
         try {
-            log.info("Deleting user with userId={} requested by email={}", userId, email);
             if (!auth(email, rawPassword)) {
-                log.warn("Delete rejected due to invalid credentials for email={}", email);
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
             }
 
             User requester = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Can't delete another user"));
             if (!userId.equals(requester.getId())) {
-                log.warn("Delete rejected because requester email={} does not own userId={}", email, userId);
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Can't delete another user");
             }
 
             User toDelete = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
             userRepository.deleteById(userId);
-            log.info("Deleted user with userId={} and email={}", userId, email);
             return toDelete;
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Failed to delete user with userId={} and email={}", userId, email, e);
             throw new RuntimeException("Failed to delete user", e);
         }
     }
@@ -197,7 +169,6 @@ public class Authentication implements AuthService {
             throw new IllegalArgumentException("email, password, and request are required");
         }
         try {
-            log.info("Attempting session login for email={}", email);
             User user = authenticateCredentials(email, password);
             setUserOnline(user, true);
             issueTokens(user);
@@ -221,12 +192,10 @@ public class Authentication implements AuthService {
 
             HttpSession session = request.getSession(true);
             session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-            log.info("Session login succeeded for userId={} and email={}", user.getId(), user.getEmail());
             return user;
         } catch (ResponseStatusException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Failed session login for email={}", email, e);
             throw new RuntimeException("Failed to log in user", e);
         }
     }
@@ -236,13 +205,11 @@ public class Authentication implements AuthService {
             throw new IllegalArgumentException("request is required");
         }
         try {
-            log.info("Logging out current HTTP session");
             Object principal = SecurityContextHolder.getContext().getAuthentication() != null
                 ? SecurityContextHolder.getContext().getAuthentication().getPrincipal()
                 : null;
 
             if (principal instanceof AuthenticatedUser authenticatedUser) {
-                log.info("Found authenticated session for userId={}", authenticatedUser.id());
                 userRepository.findById(authenticatedUser.id()).ifPresent(user -> {
                     setUserOnline(user, false);
                     accessTokens.entrySet().removeIf(entry -> authenticatedUser.id().equals(entry.getValue()));
@@ -255,9 +222,7 @@ public class Authentication implements AuthService {
             if (session != null) {
                 session.invalidate();
             }
-            log.info("HTTP session logout completed");
         } catch (Exception e) {
-            log.error("Failed to log out current HTTP session", e);
             throw new RuntimeException("Failed to log out user", e);
         }
     }
@@ -273,13 +238,9 @@ public class Authentication implements AuthService {
 
     private User authenticateCredentials(String email, String password) {
         User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> {
-                log.warn("Authentication failed because email was not found: {}", email);
-                return new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email");
-            });
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email"));
 
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
-            log.warn("Authentication failed because password did not match for email={}", email);
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid password");
         }
 
@@ -294,7 +255,6 @@ public class Authentication implements AuthService {
         String refreshToken = UUID.randomUUID().toString();
         accessTokens.put(accessToken, user.getId());
         refreshTokens.put(refreshToken, user.getId());
-        log.info("Issued new access and refresh tokens for userId={}", user.getId());
 
         return new AuthResponse(
             accessToken,
@@ -319,7 +279,6 @@ public class Authentication implements AuthService {
         if (user.getOnline() != online) {
             user.setOnline(online);
             userRepository.save(user);
-            log.info("Updated online status for userId={} to {}", user.getId(), online);
         }
     }
 }
