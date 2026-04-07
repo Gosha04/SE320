@@ -3,7 +3,11 @@ package com.SE320.therapy.controller;
 import com.SE320.therapy.dto.ApiErrorEnvelope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,9 +32,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 
 @RestController
 @RequestMapping("/auth")
+@Validated
 @Tag(name = "Authentication", description = "Endpoints for registering, authenticating, refreshing, logging out, and deleting users")
 public class UserController {
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
@@ -57,7 +64,7 @@ public class UserController {
             required = true,
             content = @Content(schema = @Schema(implementation = RegisterRequest.class))
         )
-        @RequestBody RegisterRequest req
+        @Valid @RequestBody RegisterRequest req
     ) {
         log.info("Received registration request for email={}", req == null ? null : req.email());
         return authService.register(req);
@@ -77,7 +84,7 @@ public class UserController {
             required = true,
             content = @Content(schema = @Schema(implementation = LoginRequest.class))
         )
-        @RequestBody LoginRequest req
+        @Valid @RequestBody LoginRequest req
     ) {
         log.info("Received login request for email={}", req == null ? null : req.email());
         return authService.login(req);
@@ -96,7 +103,7 @@ public class UserController {
             description = "Bearer access token. Either the raw token or the value prefixed with 'Bearer '",
             required = true
         )
-        @RequestHeader("Authorization") String authorizationHeader
+        @RequestHeader("Authorization") @NotBlank(message = "Authorization header is required") String authorizationHeader
     ) {
         log.info("Received logout request");
         authService.logout(extractAccessToken(authorizationHeader));
@@ -117,7 +124,7 @@ public class UserController {
             required = true,
             content = @Content(schema = @Schema(implementation = DeleteRequest.class))
         )
-        @RequestBody DeleteRequest req
+        @Valid @RequestBody DeleteRequest req
     ) {
         log.info(
             "Received delete request for userId={} and email={}",
@@ -154,10 +161,24 @@ public class UserController {
             description = "Refresh token string. The token may optionally be wrapped in quotes.",
             required = true,
             content = @Content(schema = @Schema(type = "string", example = "eyJhbGciOiJIUzI1NiJ9.refresh-token")))
-        @RequestBody String refreshToken
+        @RequestBody @NotBlank(message = "refreshToken is required") String refreshToken
     ) {
         log.info("Received token refresh request");
         return authService.refreshToken(normalizeToken(refreshToken));
+    }
+
+    @Operation(summary = "Get users", description = "Returns a paginated list of users.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Users returned successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid pagination request", content = @Content(schema = @Schema(implementation = ApiErrorEnvelope.class)))
+    })
+    @GetMapping("/users")
+    @ResponseStatus(HttpStatus.OK)
+    public Page<UserResponse> getUsers(
+        @Parameter(description = "Pagination information including page number, size, and sorting")
+        Pageable pageable
+    ) {
+        return authService.getUsers(pageable);
     }
 
     private String extractAccessToken(String authorizationHeader) {

@@ -17,6 +17,8 @@ import com.SE320.therapy.repository.AchievementRepository;
 import com.SE320.therapy.repository.DiaryEntryRepository;
 import com.SE320.therapy.repository.SessionRepository;
 import com.SE320.therapy.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -85,13 +87,16 @@ public class DashboardService {
     }
 
     public List<AchievementResponse> getAchievements(UUID userId) {
+        return getAchievements(userId, Pageable.unpaged()).getContent();
+    }
+
+    public Page<AchievementResponse> getAchievements(UUID userId, Pageable pageable) {
         validateUserId(userId);
         userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        return achievementRepository.findByUser_Id(userId).stream()
-                .map(this::toAchievementResponse)
-                .toList();
+        return achievementRepository.findByUser_Id(userId, pageable)
+                .map(this::toAchievementResponse);
     }
 
     public AchievementResponse createAchievement(UUID userId, AchievementRequest request) {

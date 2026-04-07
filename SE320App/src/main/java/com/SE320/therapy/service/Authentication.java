@@ -10,6 +10,8 @@ import jakarta.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -117,6 +119,11 @@ public class Authentication implements AuthService {
         refreshTokens.entrySet().removeIf(entry -> userId.equals(entry.getValue()));
         userRepository.findById(userId).ifPresent(user -> setUserOnline(user, false));
         log.info("Logout succeeded for userId={}", userId);
+    }
+
+    @Override
+    public Page<UserResponse> getUsers(Pageable pageable) {
+        return userRepository.findAll(pageable).map(this::toUserResponse);
     }
 
     public User registerUser(UserType userType, String firstName, String lastName,

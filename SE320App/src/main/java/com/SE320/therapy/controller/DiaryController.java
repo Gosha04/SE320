@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,9 +35,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 
 @RestController
 @RequestMapping("/diary")
+@Validated
 @Tag(name = "Diary", description = "Endpoints for thought diary entries, insights, and distortion suggestions")
 public class DiaryController {
 
@@ -71,7 +74,7 @@ public class DiaryController {
     @ResponseStatus(HttpStatus.CREATED)
     public DiaryEntryResponse createEntry(
         @Parameter(description = "Unique identifier of the user who owns the diary entry", required = true)
-        @RequestParam UUID userId,
+        @RequestParam @NotNull(message = "userId is required") UUID userId,
         @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Diary entry payload containing the situation, thought, alternative thought, and mood ratings",
             required = true
@@ -101,7 +104,7 @@ public class DiaryController {
     @ResponseStatus(HttpStatus.OK)
     public Page<DiaryEntrySummary> getEntries(
         @Parameter(description = "Unique identifier of the user whose entries should be returned", required = true)
-        @RequestParam UUID userId,
+        @RequestParam @NotNull(message = "userId is required") UUID userId,
         @Parameter(description = "Pagination information including page number, size, and sorting")
         Pageable pageable
     ) {
@@ -128,7 +131,7 @@ public class DiaryController {
     @ResponseStatus(HttpStatus.OK)
     public DiaryEntryDetail getEntryDetail(
         @Parameter(description = "Unique identifier of the diary entry", required = true)
-        @PathVariable UUID entryId
+        @PathVariable @NotNull(message = "entryId is required") UUID entryId
     ) {
         return diaryService.getEntryDetail(entryId);
     }
@@ -152,7 +155,7 @@ public class DiaryController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteEntry(
         @Parameter(description = "Unique identifier of the diary entry to delete", required = true)
-        @PathVariable UUID entryId
+        @PathVariable @NotNull(message = "entryId is required") UUID entryId
     ) {
         diaryService.deleteEntry(entryId);
     }
@@ -177,7 +180,7 @@ public class DiaryController {
     @ResponseStatus(HttpStatus.OK)
     public DiaryInsights getInsights(
         @Parameter(description = "Unique identifier of the user whose insights should be returned", required = true)
-        @RequestParam UUID userId
+        @RequestParam @NotNull(message = "userId is required") UUID userId
     ) {
         return diaryService.getInsights(userId);
     }
