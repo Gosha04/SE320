@@ -17,11 +17,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.SE320.therapy.dto.AchievementRequest;
 import com.SE320.therapy.dto.AchievementResponse;
+import com.SE320.therapy.objects.BurnoutRecovery;
 import com.SE320.therapy.objects.Dashboard;
+import com.SE320.therapy.objects.MonthlyTrends;
+import com.SE320.therapy.objects.WeeklyProgress;
 import com.SE320.therapy.service.DashboardService;
 
 @RestController
-@RequestMapping("/dashboard")
+@RequestMapping("/progress")
 public class DashboardController {
     private final DashboardService dashboardService;
 
@@ -35,13 +38,31 @@ public class DashboardController {
         return dashboardService.getDashboard(userId);
     }
 
-    @GetMapping("/achievements")
+    @GetMapping("/progress/monthly")
+    @ResponseStatus(HttpStatus.OK)
+    public MonthlyTrends getMonthlyTrends(@RequestParam UUID userId) {
+        return dashboardService.getMonthlyTrends(userId);
+    }
+
+    @GetMapping("/progress/weekly")
+    @ResponseStatus(HttpStatus.OK)
+    public WeeklyProgress getWeeklyProgress(@RequestParam UUID userId) {
+        return dashboardService.getWeeklyProgress(userId);
+    }
+
+    @GetMapping("/progress/burnout")
+    @ResponseStatus(HttpStatus.OK)
+    public BurnoutRecovery getBurnoutRecovery(@RequestParam UUID userId) {
+        return dashboardService.getBurnoutRecovery(userId);
+    }
+
+    @GetMapping("/progress/achievements")
     @ResponseStatus(HttpStatus.OK)
     public List<AchievementResponse> getAchievements(@RequestParam UUID userId) {
         return dashboardService.getAchievements(userId);
     }
 
-    @PostMapping("/achievements")
+    @PostMapping("/progress/achievements") // Bonus
     @ResponseStatus(HttpStatus.CREATED)
     public AchievementResponse createAchievement(
         @RequestParam UUID userId,
@@ -50,7 +71,7 @@ public class DashboardController {
         return dashboardService.createAchievement(userId, request);
     }
 
-    @PutMapping("/achievements/{achievementId}")
+    @PutMapping("/progress/achievements/{achievementId}") // Bonus
     @ResponseStatus(HttpStatus.OK)
     public AchievementResponse updateAchievement(
         @RequestParam UUID userId,
@@ -60,7 +81,7 @@ public class DashboardController {
         return dashboardService.updateAchievement(userId, achievementId, request);
     }
 
-    @DeleteMapping("/achievements/{achievementId}")
+    @DeleteMapping("/progress/achievements/{achievementId}") // Bonus
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteAchievement(
         @RequestParam UUID userId,

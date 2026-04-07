@@ -41,6 +41,8 @@ class MenuTest {
         String output = getOutput();
         assertTrue(output.contains("=== Main Menu ==="));
         assertTrue(output.contains("1. Authentication"));
+        assertTrue(output.contains("5. Crisis"));
+        assertTrue(output.contains("6. Settings"));
         assertTrue(output.contains("7. Exit"));
         assertTrue(output.contains("Select an area: "));
     }
@@ -49,7 +51,7 @@ class MenuTest {
     void execute_routesToAuthenticationCommands() {
         CountingUserCommands userCommands = new CountingUserCommands();
         Menu menu = createMenu(userCommands, new CountingSessionCommands(), new CountingDiaryCommands(),
-                new CountingDashboardCommands(), "auth\n7\n");
+                new CountingDashboardCommands(), new CountingCrisisCommands(), new CountingSettingsCommands(), "auth\n7\n");
 
         menu.execute();
 
@@ -60,7 +62,7 @@ class MenuTest {
     void execute_routesToSessionCommands() {
         CountingSessionCommands sessionCommands = new CountingSessionCommands();
         Menu menu = createMenu(new CountingUserCommands(), sessionCommands, new CountingDiaryCommands(),
-                new CountingDashboardCommands(), "session\n7\n");
+                new CountingDashboardCommands(), new CountingCrisisCommands(), new CountingSettingsCommands(), "session\n7\n");
 
         menu.execute();
 
@@ -71,7 +73,7 @@ class MenuTest {
     void execute_routesToDiaryCommands() {
         CountingDiaryCommands diaryCommands = new CountingDiaryCommands();
         Menu menu = createMenu(new CountingUserCommands(), new CountingSessionCommands(), diaryCommands,
-                new CountingDashboardCommands(), "3\n7\n");
+                new CountingDashboardCommands(), new CountingCrisisCommands(), new CountingSettingsCommands(), "3\n7\n");
 
         menu.execute();
 
@@ -81,31 +83,35 @@ class MenuTest {
     @Test
     void execute_handlesDashboardAndStaticOptions() {
         CountingDashboardCommands dashboardCommands = new CountingDashboardCommands();
+        CountingCrisisCommands crisisCommands = new CountingCrisisCommands();
+        CountingSettingsCommands settingsCommands = new CountingSettingsCommands();
         Menu menu = createMenu(new CountingUserCommands(), new CountingSessionCommands(), new CountingDiaryCommands(),
-                dashboardCommands, "dashboard\ncrisis\nsettings\nbad-option\nhelp\nexit\n");
+                dashboardCommands, crisisCommands, settingsCommands, "dashboard\ncrisis\nsettings\nbad-option\nhelp\nexit\n");
 
         menu.execute();
 
         String output = getOutput();
         assertEquals(1, dashboardCommands.executeCalls);
-        assertTrue(output.contains("Crisis commands are not available yet."));
-        assertTrue(output.contains("Settings commands are not available yet."));
+        assertEquals(1, crisisCommands.executeCalls);
+        assertEquals(1, settingsCommands.executeCalls);
         assertTrue(output.contains("Please choose a valid menu option."));
         assertEquals(2, countOccurrences(output, "=== Main Menu ==="));
     }
 
     private Menu createMenu(String input) {
         return createMenu(new CountingUserCommands(), new CountingSessionCommands(), new CountingDiaryCommands(),
-                new CountingDashboardCommands(), input);
+                new CountingDashboardCommands(), new CountingCrisisCommands(), new CountingSettingsCommands(), input);
     }
 
     private Menu createMenu(UserCommands userCommands,
                             SessionCommands sessionCommands,
                             DiaryCommands diaryCommands,
                             DashboardCommands dashboardCommands,
+                            CrisisCommands crisisCommands,
+                            SettingsCommands settingsCommands,
                             String input) {
         Scanner scanner = new Scanner(new ByteArrayInputStream(input.getBytes(StandardCharsets.UTF_8)));
-        return new Menu(scanner, userCommands, sessionCommands, diaryCommands, dashboardCommands);
+        return new Menu(scanner, userCommands, sessionCommands, diaryCommands, dashboardCommands, crisisCommands, settingsCommands);
     }
 
     private String getOutput() {
@@ -161,6 +167,28 @@ class MenuTest {
         private CountingDashboardCommands() {
             super(null, new CountingUserCommands(), new Scanner(new ByteArrayInputStream(new byte[0])));
         }
+
+        @Override
+        public void execute() {
+            executeCalls++;
+        }
+    }
+
+    private static final class CountingCrisisCommands extends CrisisCommands {
+        private int executeCalls;
+
+        private CountingCrisisCommands() {
+            super(null, new CountingUserCommands(), new Scanner(new ByteArrayInputStream(new byte[0])));
+        }
+
+        @Override
+        public void execute() {
+            executeCalls++;
+        }
+    }
+
+    private static final class CountingSettingsCommands extends SettingsCommands {
+        private int executeCalls;
 
         @Override
         public void execute() {

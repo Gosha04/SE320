@@ -3,8 +3,13 @@ package com.SE320.therapy.service;
 import com.SE320.therapy.dto.*;
 import com.SE320.therapy.entity.DiaryEntry;
 import com.SE320.therapy.entity.User;
+import com.SE320.therapy.exception.ApiException;
 import com.SE320.therapy.repository.DiaryEntryRepository;
 import com.SE320.therapy.repository.UserRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -25,10 +30,13 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     public DiaryEntryResponse createEntry(UUID userId, DiaryEntryCreateRequest request) {
-        validateRequest(request);
-
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found."));
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "USER_NOT_FOUND",
+                        "No user was found for the provided userId.",
+                        List.of(new ApiErrorDetail("userId", "No user exists with the provided id"))
+                ));
 
         DiaryEntry entry = new DiaryEntry(
                 UUID.randomUUID(),
@@ -52,7 +60,7 @@ public class DiaryServiceImpl implements DiaryService {
     }
 
     @Override
-    public List<DiaryEntrySummary> getEntries(UUID userId) {
+    public Page<DiaryEntrySummary> getEntries(UUID userId, Pageable pageable) {
         List<DiaryEntry> entries = diaryEntryRepository.findByUser_IdAndDeletedFalse(userId);
         List<DiaryEntrySummary> summaries = new ArrayList<>();
 
@@ -71,13 +79,28 @@ public class DiaryServiceImpl implements DiaryService {
             ));
         }
 
-        return summaries;
+        if (pageable == null || pageable.isUnpaged()) {
+        return new PageImpl<>(summaries);
+        }
+
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), summaries.size());
+
+        List<DiaryEntrySummary> pageContent =
+            start >= summaries.size() ? List.of() : summaries.subList(start, end);
+
+        return new PageImpl<>(pageContent, pageable, summaries.size());
     }
 
     @Override
     public DiaryEntryDetail getEntryDetail(UUID entryId) {
         DiaryEntry entry = diaryEntryRepository.findByIdAndDeletedFalse(entryId)
-                .orElseThrow(() -> new IllegalArgumentException("Diary entry not found."));
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "DIARY_ENTRY_NOT_FOUND",
+                        "No diary entry was found for the provided entryId.",
+                        List.of(new ApiErrorDetail("entryId", "No active diary entry exists with the provided id"))
+                ));
 
         return new DiaryEntryDetail(
                 entry.getId(),
@@ -94,7 +117,12 @@ public class DiaryServiceImpl implements DiaryService {
     @Override
     public void deleteEntry(UUID entryId) {
         DiaryEntry entry = diaryEntryRepository.findByIdAndDeletedFalse(entryId)
-                .orElseThrow(() -> new IllegalArgumentException("Diary entry not found."));
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "DIARY_ENTRY_NOT_FOUND",
+                        "No diary entry was found for the provided entryId.",
+                        List.of(new ApiErrorDetail("entryId", "No active diary entry exists with the provided id"))
+                ));
 
         entry.setDeleted(true);
         diaryEntryRepository.save(entry);
@@ -125,25 +153,40 @@ public class DiaryServiceImpl implements DiaryService {
         return new DiaryInsights(entries.size(), averageImprovement, bestImprovement);
     }
 
-    private void validateRequest(DiaryEntryCreateRequest request) {
-        if (request.getSituation() == null || request.getSituation().trim().isEmpty()) {
-            throw new IllegalArgumentException("Situation cannot be empty.");
+    @Override
+    public List<DistortionSuggestion> suggestDistortions(String thought) {
+        List<DistortionSuggestion> suggestions = new ArrayList<>();
+
+        if (thought == null || thought.trim().isEmpty()) {
+            throw new IllegalArgumentException("Thought cannot be empty.");
         }
 
-        if (request.getAutomaticThought() == null || request.getAutomaticThought().trim().isEmpty()) {
-            throw new IllegalArgumentException("Automatic thought cannot be empty.");
+        String lowerThought = thought.toLowerCase();
+
+        if (lowerThought.contains("always") || lowerThought.contains("never")) {
+            suggestions.add(new DistortionSuggestion(
+                    "all-or-nothing",
+                    0.9,
+                    "Uses absolute words like always or never."
+            ));
         }
 
-        if (request.getAlternativeThought() == null || request.getAlternativeThought().trim().isEmpty()) {
-            throw new IllegalArgumentException("Alternative thought cannot be empty.");
+        if (lowerThought.contains("worst") || lowerThought.contains("ruined") || lowerThought.contains("disaster")) {
+            suggestions.add(new DistortionSuggestion(
+                    "catastrophizing",
+                    0.85,
+                    "Assumes the worst possible outcome."
+            ));
         }
 
-        if (request.getMoodBefore() < 1 || request.getMoodBefore() > 10) {
-            throw new IllegalArgumentException("Mood before must be between 1 and 10.");
+        if (lowerThought.contains("they think") || lowerThought.contains("they hate me")) {
+            suggestions.add(new DistortionSuggestion(
+                    "mind-reading",
+                    0.8,
+                    "Assumes what other people are thinking without proof."
+            ));
         }
 
-        if (request.getMoodAfter() < 1 || request.getMoodAfter() > 10) {
-            throw new IllegalArgumentException("Mood after must be between 1 and 10.");
-        }
+        return suggestions;
     }
 }

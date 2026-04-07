@@ -14,6 +14,20 @@ import java.util.UUID;
 @Repository
 public interface SessionRepository extends JpaRepository<CBTSession, UUID> {
 
+    @Query("""
+        select s from CBTSession s
+        where s.userId is null
+        order by coalesce(s.orderIndex, 999999), s.title
+        """)
+    List<CBTSession> findLibrarySessions();
+
+    @Query("""
+        select s from CBTSession s
+        where s.userId is null
+          and s.sessionId = :sessionId
+        """)
+    Optional<CBTSession> findLibrarySessionBySessionId(@Param("sessionId") Long sessionId);
+
     @Query("select s from CBTSession s where s.userId = :userId")
     List<CBTSession> findByUserId(@Param("userId") String userId);
 
