@@ -36,6 +36,7 @@ public class SecurityConfig {
                     "/swagger-ui/**",
                     "/swagger-ui.html"
                 ).permitAll()
+                .requestMatchers("/sessions/**").hasAnyRole("PATIENT", "DOCTOR")
                 .anyRequest().authenticated()
             )
             .exceptionHandling(exceptions -> exceptions

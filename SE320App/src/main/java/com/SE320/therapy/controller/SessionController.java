@@ -14,6 +14,7 @@ import com.SE320.therapy.service.SessionService;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -44,6 +45,7 @@ public class SessionController {
         this.sessionService = null;
     }
 
+    @Autowired
     public SessionController(SessionService sessionService) {
         this.sessionService = sessionService;
     }
@@ -62,6 +64,8 @@ public class SessionController {
     @Operation(summary = "Get session details", description = "Returns the details for a CBT session in the library.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Session details returned successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiErrorEnvelope.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ApiErrorEnvelope.class))),
         @ApiResponse(responseCode = "400", description = "Invalid session id", content = @Content(schema = @Schema(implementation = ApiErrorEnvelope.class))),
         @ApiResponse(responseCode = "404", description = "Session not found", content = @Content(schema = @Schema(implementation = ApiErrorEnvelope.class)))
     })
@@ -75,6 +79,8 @@ public class SessionController {
     @Operation(summary = "Start CBT session", description = "Starts a user session for the selected CBT module.")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Session started successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiErrorEnvelope.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ApiErrorEnvelope.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(schema = @Schema(implementation = ApiErrorEnvelope.class))),
         @ApiResponse(responseCode = "404", description = "Session or user not found", content = @Content(schema = @Schema(implementation = ApiErrorEnvelope.class))),
         @ApiResponse(responseCode = "409", description = "An active session already exists", content = @Content(schema = @Schema(implementation = ApiErrorEnvelope.class)))
@@ -91,6 +97,8 @@ public class SessionController {
     @Operation(summary = "Send chat message", description = "Sends a chat message inside an active user session and returns the assistant reply.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Chat processed successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiErrorEnvelope.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ApiErrorEnvelope.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(schema = @Schema(implementation = ApiErrorEnvelope.class))),
         @ApiResponse(responseCode = "404", description = "Active session not found", content = @Content(schema = @Schema(implementation = ApiErrorEnvelope.class)))
     })
@@ -105,6 +113,8 @@ public class SessionController {
     @Operation(summary = "End session", description = "Ends the active user session for the selected CBT module.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Session ended successfully"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(schema = @Schema(implementation = ApiErrorEnvelope.class))),
+        @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ApiErrorEnvelope.class))),
         @ApiResponse(responseCode = "400", description = "Invalid request body", content = @Content(schema = @Schema(implementation = ApiErrorEnvelope.class))),
         @ApiResponse(responseCode = "404", description = "Active session not found", content = @Content(schema = @Schema(implementation = ApiErrorEnvelope.class)))
     })
