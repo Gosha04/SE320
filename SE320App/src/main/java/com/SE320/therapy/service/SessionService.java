@@ -16,12 +16,13 @@ import com.SE320.therapy.entity.UserSession;
 import com.SE320.therapy.exception.ApiException;
 import com.SE320.therapy.objects.ChatRole;
 import com.SE320.therapy.objects.InteractionModality;
-import com.SE320.therapy.objects.SessionStatus;
 import com.SE320.therapy.objects.UserSessionStatus;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.SE320.therapy.repository.ChatMessageRepository;
 import com.SE320.therapy.repository.SessionRepository;
@@ -35,22 +36,12 @@ import java.util.UUID;
 @Service
 public class SessionService {
 
+    private static final Logger log = LoggerFactory.getLogger(SessionService.class);
+
     private final SessionRepository sessionRepository;
     private final UserRepository userRepository;
     private final UserSessionRepository userSessionRepository;
     private final ChatMessageRepository chatMessageRepository;
-
-    private final List<String> sessionLibrary = List.of(
-            "Thought Record",
-            "Behavioral Activation",
-            "Cognitive Restructuring");
-
-    public SessionService() {
-        this.chatMessageRepository = null;
-        this.userRepository = null;
-        this.sessionRepository = null;
-        this.userSessionRepository = null;
-    }
 
     public SessionService(SessionRepository sessionRepository) {
         this(sessionRepository, null, null, null);
@@ -70,6 +61,7 @@ public class SessionService {
 
     @Transactional(readOnly = true)
     public List<SessionLibraryItemResponse> getSessionLibrary() {
+        log.debug("Loading CBT session library");
         return sessionRepository.findLibrarySessions()
             .stream()
             .map(this::toLibraryItem)
@@ -78,11 +70,13 @@ public class SessionService {
 
     @Transactional(readOnly = true)
     public SessionDetailResponse getSessionDetail(Long sessionId) {
+        log.debug("Loading CBT session detail for sessionId={}", sessionId);
         return toDetailResponse(getLibrarySession(sessionId));
     }
 
     @Transactional
     public SessionRunResponse startSession(Long sessionId, StartSessionRequest request) {
+        log.info("Starting user session for userId={} sessionId={}", request.userId(), sessionId);
         CBTSession session = getLibrarySession(sessionId);
         User user = getUser(request.userId());
 
@@ -107,11 +101,14 @@ public class SessionService {
         userSession.setStartedAt(LocalDateTime.now());
         userSession.setMoodBefore(request.moodBefore());
 
-        return toRunResponse(userSessionRepository.save(userSession));
+        SessionRunResponse response = toRunResponse(userSessionRepository.save(userSession));
+        log.info("Started userSessionId={} for userId={} sessionId={}", response.userSessionId(), response.userId(), response.sessionId());
+        return response;
     }
 
     @Transactional
     public SessionChatResponse sendChatMessage(Long sessionId, SendChatMessageRequest request) {
+        log.info("Processing chat message for userId={} sessionId={}", request.userId(), sessionId);
         UserSession userSession = getActiveSession(request.userId(), sessionId);
         InteractionModality modality = request.modality() == null ? InteractionModality.TEXT : request.modality();
 
@@ -129,96 +126,41 @@ public class SessionService {
         assistantMessage.setModality(modality);
         assistantMessage = chatMessageRepository.save(assistantMessage);
 
-        return new SessionChatResponse(
+        SessionChatResponse response = new SessionChatResponse(
             userSession.getId(),
             userSession.getCbtSession().getSessionId(),
             toChatMessageResponse(userMessage),
             toChatMessageResponse(assistantMessage)
         );
+        log.debug("Stored chat exchange for userSessionId={} with modality={}", response.userSessionId(), modality);
+        return response;
     }
 
     @Transactional
     public SessionRunResponse endSession(Long sessionId, EndSessionRequest request) {
+        log.info("Ending user session for userId={} sessionId={}", request.userId(), sessionId);
         UserSession userSession = getActiveSession(request.userId(), sessionId);
         userSession.setStatus(UserSessionStatus.COMPLETED);
         userSession.setEndedAt(LocalDateTime.now());
         userSession.setMoodAfter(request.moodAfter());
-        return toRunResponse(userSessionRepository.save(userSession));
+        SessionRunResponse response = toRunResponse(userSessionRepository.save(userSession));
+        log.info("Ended userSessionId={} with moodAfter={}", response.userSessionId(), response.moodAfter());
+        return response;
     }
 
-    public List<String> viewSessionLibrary() {
-        return sessionLibrary;
+    @Transactional(readOnly = true)
+    public SessionRunResponse continueSession(UUID userId, Long sessionId) {
+        log.debug("Continuing active user session for userId={} sessionId={}", userId, sessionId);
+        return toRunResponse(getActiveSession(userId, sessionId));
     }
 
-    public CBTSession startNewSession(String userId, String sessionType) {
-        if (userId == null || userId.isBlank()) {
-            throw new IllegalArgumentException("User ID is required.");
-        }
-
-        if (sessionType == null || sessionType.isBlank()) {
-            throw new IllegalArgumentException("Session type is required.");
-        }
-
-        if (sessionRepository.existsByUserIdAndStatus(userId, SessionStatus.ACTIVE)) {
-            throw new IllegalStateException("User already has an active session.");
-        }
-
-        CBTSession session = new CBTSession();
-        session.setUserId(userId);
-        session.setSessionType(sessionType);
-        session.setStatus(SessionStatus.ACTIVE);
-        session.setStartedAt(LocalDateTime.now());
-
-        return sessionRepository.save(session);
-    }
-
-    public CBTSession continueSession(String userId, Long sessionId) {
-        if (userId == null || userId.isBlank()) {
-            throw new IllegalArgumentException("User ID is required.");
-        }
-
-        if (sessionId == null) {
-            throw new IllegalArgumentException("Session ID is required.");
-        }
-
-        CBTSession session = sessionRepository.findBySessionIdAndUserId(sessionId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Session not found."));
-
-        if (session.getStatus() == SessionStatus.ENDED) {
-            throw new IllegalStateException("This session has already ended.");
-        }
-
-        session.setStatus(SessionStatus.ACTIVE);
-        return sessionRepository.save(session);
-    }
-
-    public void endSession(String userId, Long sessionId) {
-        if (userId == null || userId.isBlank()) {
-            throw new IllegalArgumentException("User ID is required.");
-        }
-
-        if (sessionId == null) {
-            throw new IllegalArgumentException("Session ID is required.");
-        }
-
-        CBTSession session = sessionRepository.findBySessionIdAndUserId(sessionId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Session not found."));
-
-        if (session.getStatus() == SessionStatus.ENDED) {
-            throw new IllegalStateException("This session has already ended.");
-        }
-
-        session.setStatus(SessionStatus.ENDED);
-        session.setEndedAt(LocalDateTime.now());
-        sessionRepository.save(session);
-    }
-
-    public List<CBTSession> viewSessionHistory(String userId) {
-        if (userId == null || userId.isBlank()) {
-            throw new IllegalArgumentException("User ID is required.");
-        }
-
-        return sessionRepository.findByUserId(userId);
+    @Transactional(readOnly = true)
+    public List<SessionRunResponse> getSessionHistory(UUID userId) {
+        log.debug("Loading session history for userId={}", userId);
+        return userSessionRepository.findByUserIdOrderByStartedAtDesc(userId)
+            .stream()
+            .map(this::toRunResponse)
+            .toList();
     }
 
     private UserSession getActiveSession(UUID userId, Long sessionId) {

@@ -3,11 +3,15 @@ package com.SE320.therapy.cli.commands;
 import java.util.List;
 import java.util.Locale;
 import java.util.Scanner;
+import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
 import com.SE320.therapy.controller.SessionController;
-import com.SE320.therapy.entity.CBTSession;
+import com.SE320.therapy.dto.EndSessionRequest;
+import com.SE320.therapy.dto.SessionLibraryItemResponse;
+import com.SE320.therapy.dto.SessionRunResponse;
+import com.SE320.therapy.dto.StartSessionRequest;
 
 @Component
 public class SessionCommands implements Command {
@@ -50,7 +54,7 @@ public class SessionCommands implements Command {
     private void viewSessionLibrary() {
         try {
             System.out.println("\n--- Session Library ---");
-            List<String> library = sessionController.viewSessionLibrary();
+            List<SessionLibraryItemResponse> library = sessionController.getSessionLibrary();
 
             if (library == null || library.isEmpty()) {
                 System.out.println("No CBT sessions are currently available.");
@@ -58,7 +62,8 @@ public class SessionCommands implements Command {
             }
 
             for (int i = 0; i < library.size(); i++) {
-                System.out.println((i + 1) + ". " + library.get(i));
+                SessionLibraryItemResponse item = library.get(i);
+                System.out.println((i + 1) + ". " + item.title() + " (Session ID: " + item.sessionId() + ")");
             }
         } catch (Exception e) {
             System.out.println("Unable to load the session library. Please try again.");
@@ -66,14 +71,14 @@ public class SessionCommands implements Command {
     }
 
     private void startNewSession() {
-        String userId = userCommands.getCurrentUserIdAsString();
+        UUID userId = userCommands.getCurrentUserId();
         if (userId == null) {
             System.out.println("You must be logged in to start a session.");
             return;
         }
 
         try {
-            List<String> library = sessionController.viewSessionLibrary();
+            List<SessionLibraryItemResponse> library = sessionController.getSessionLibrary();
 
             if (library == null || library.isEmpty()) {
                 System.out.println("No CBT sessions are currently available.");
@@ -82,7 +87,8 @@ public class SessionCommands implements Command {
 
             System.out.println("\n--- Start New Session ---");
             for (int i = 0; i < library.size(); i++) {
-                System.out.println((i + 1) + ". " + library.get(i));
+                SessionLibraryItemResponse item = library.get(i);
+                System.out.println((i + 1) + ". " + item.title() + " (Session ID: " + item.sessionId() + ")");
             }
 
             System.out.print("Choose a session by number: ");
@@ -106,13 +112,16 @@ public class SessionCommands implements Command {
                 return;
             }
 
-            String sessionType = library.get(choice - 1);
-            CBTSession session = sessionController.startNewSession(userId, sessionType);
+            SessionLibraryItemResponse selectedSession = library.get(choice - 1);
+            SessionRunResponse session = sessionController.startSession(
+                selectedSession.sessionId(),
+                new StartSessionRequest(userId, null)
+            );
 
             System.out.println("New CBT session started successfully.");
-            System.out.println("Session ID: " + session.getSessionId());
-            System.out.println("Type: " + session.getSessionType());
-            System.out.println("Status: " + session.getStatus());
+            System.out.println("Session ID: " + session.sessionId());
+            System.out.println("Title: " + session.title());
+            System.out.println("Status: " + session.status());
         } catch (IllegalArgumentException | IllegalStateException e) {
             System.out.println(e.getMessage());
         } catch (Exception e) {
@@ -121,7 +130,7 @@ public class SessionCommands implements Command {
     }
 
     private void continueSession() {
-        String userId = userCommands.getCurrentUserIdAsString();
+        UUID userId = userCommands.getCurrentUserId();
         if (userId == null) {
             System.out.println("You must be logged in to continue a session.");
             return;
@@ -144,12 +153,12 @@ public class SessionCommands implements Command {
                 return;
             }
 
-            CBTSession session = sessionController.continueSession(userId, sessionId);
+            SessionRunResponse session = sessionController.continueSession(userId, sessionId);
 
             System.out.println("Session continued successfully.");
-            System.out.println("Session ID: " + session.getSessionId());
-            System.out.println("Type: " + session.getSessionType());
-            System.out.println("Status: " + session.getStatus());
+            System.out.println("Session ID: " + session.sessionId());
+            System.out.println("Title: " + session.title());
+            System.out.println("Status: " + session.status());
         } catch (IllegalArgumentException | IllegalStateException e) {
             System.out.println(e.getMessage());
         } catch (Exception e) {
@@ -158,14 +167,14 @@ public class SessionCommands implements Command {
     }
 
     private void endSession() {
-        String userId = userCommands.getCurrentUserIdAsString();
+        UUID userId = userCommands.getCurrentUserId();
         if (userId == null) {
             System.out.println("You must be logged in to end a session.");
             return;
         }
 
         try {
-            List<CBTSession> history = sessionController.viewSessionHistory(userId);
+            List<SessionRunResponse> history = sessionController.getSessionHistory(userId);
 
             if (history == null || history.isEmpty()) {
                 System.out.println("No session history found.");
@@ -173,10 +182,10 @@ public class SessionCommands implements Command {
             }
 
             System.out.println("\n--- Available Sessions ---");
-            for (CBTSession session : history) {
-                System.out.println("Session ID: " + session.getSessionId());
-                System.out.println("Type: " + session.getSessionType());
-                System.out.println("Status: " + session.getStatus());
+            for (SessionRunResponse session : history) {
+                System.out.println("Session ID: " + session.sessionId());
+                System.out.println("Title: " + session.title());
+                System.out.println("Status: " + session.status());
                 System.out.println("-------------------------");
             }
 
@@ -196,7 +205,7 @@ public class SessionCommands implements Command {
                 return;
             }
 
-            sessionController.endSession(userId, sessionId);
+            sessionController.endActiveSession(sessionId, new EndSessionRequest(userId, null));
             System.out.println("Session ended successfully.");
         } catch (IllegalArgumentException | IllegalStateException e) {
             System.out.println(e.getMessage());
@@ -206,7 +215,7 @@ public class SessionCommands implements Command {
     }
 
     private void viewSessionHistory() {
-        String userId = userCommands.getCurrentUserIdAsString();
+        UUID userId = userCommands.getCurrentUserId();
         if (userId == null) {
             System.out.println("You must be logged in to view session history.");
             return;
@@ -214,19 +223,19 @@ public class SessionCommands implements Command {
 
         try {
             System.out.println("\n--- Session History ---");
-            List<CBTSession> history = sessionController.viewSessionHistory(userId);
+            List<SessionRunResponse> history = sessionController.getSessionHistory(userId);
 
             if (history == null || history.isEmpty()) {
                 System.out.println("No session history found.");
                 return;
             }
 
-            for (CBTSession session : history) {
-                System.out.println("Session ID: " + session.getSessionId());
-                System.out.println("Type: " + session.getSessionType());
-                System.out.println("Status: " + session.getStatus());
-                System.out.println("Started: " + session.getStartedAt());
-                System.out.println("Ended: " + session.getEndedAt());
+            for (SessionRunResponse session : history) {
+                System.out.println("Session ID: " + session.sessionId());
+                System.out.println("Title: " + session.title());
+                System.out.println("Status: " + session.status());
+                System.out.println("Started: " + session.startedAt());
+                System.out.println("Ended: " + session.endedAt());
                 System.out.println("-------------------------");
             }
         } catch (IllegalArgumentException e) {
