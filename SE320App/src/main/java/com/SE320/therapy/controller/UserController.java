@@ -1,6 +1,8 @@
 package com.SE320.therapy.controller;
 
 import com.SE320.therapy.dto.ApiErrorEnvelope;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,6 +33,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/auth")
 @Tag(name = "Authentication", description = "Endpoints for registering, authenticating, refreshing, logging out, and deleting users")
 public class UserController {
+    private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
     private final AuthService authService;
     private final Authentication authentication;
@@ -56,6 +59,7 @@ public class UserController {
         )
         @RequestBody RegisterRequest req
     ) {
+        log.info("Received registration request for email={}", req == null ? null : req.email());
         return authService.register(req);
     }
 
@@ -75,6 +79,7 @@ public class UserController {
         )
         @RequestBody LoginRequest req
     ) {
+        log.info("Received login request for email={}", req == null ? null : req.email());
         return authService.login(req);
     }
 
@@ -93,6 +98,7 @@ public class UserController {
         )
         @RequestHeader("Authorization") String authorizationHeader
     ) {
+        log.info("Received logout request");
         authService.logout(extractAccessToken(authorizationHeader));
     }
 
@@ -113,6 +119,11 @@ public class UserController {
         )
         @RequestBody DeleteRequest req
     ) {
+        log.info(
+            "Received delete request for userId={} and email={}",
+            req == null ? null : req.userId(),
+            req == null ? null : req.email()
+        );
         User deleted = authentication.deleteUser(
             req.userId(),
             req.email(),
@@ -145,6 +156,7 @@ public class UserController {
             content = @Content(schema = @Schema(type = "string", example = "eyJhbGciOiJIUzI1NiJ9.refresh-token")))
         @RequestBody String refreshToken
     ) {
+        log.info("Received token refresh request");
         return authService.refreshToken(normalizeToken(refreshToken));
     }
 
