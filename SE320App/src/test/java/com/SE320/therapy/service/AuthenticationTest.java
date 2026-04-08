@@ -31,6 +31,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.SE320.therapy.entity.User;
 import com.SE320.therapy.objects.UserType;
 import com.SE320.therapy.repository.UserRepository;
+import com.SE320.therapy.security.JwtService;
 
 @ExtendWith(MockitoExtension.class)
 class AuthenticationTest {
@@ -41,6 +42,9 @@ class AuthenticationTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private JwtService jwtService;
+
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
@@ -48,13 +52,15 @@ class AuthenticationTest {
 
     @Test
     void loginStoresAuthenticatedUserInSecurityContextAndSession() {
-        Authentication authentication = new Authentication(userRepository, passwordEncoder);
+        Authentication authentication = new Authentication(userRepository, passwordEncoder, jwtService);
         User user = createUser(false);
         MockHttpServletRequest request = new MockHttpServletRequest();
 
         when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("password123", user.getPasswordHash())).thenReturn(true);
         when(userRepository.save(user)).thenReturn(user);
+        when(jwtService.generateAccessToken(user)).thenReturn("access-token");
+        when(jwtService.generateRefreshToken(user)).thenReturn("refresh-token");
 
         User loggedInUser = authentication.login(user.getEmail(), "password123", request);
 
@@ -81,7 +87,7 @@ class AuthenticationTest {
 
     @Test
     void loginWithInvalidCredentialsReturnsUnauthorizedAndDoesNotCreateSession() {
-        Authentication authentication = new Authentication(userRepository, passwordEncoder);
+        Authentication authentication = new Authentication(userRepository, passwordEncoder, jwtService);
         User user = createUser(false);
         MockHttpServletRequest request = new MockHttpServletRequest();
 
@@ -103,7 +109,7 @@ class AuthenticationTest {
 
     @Test
     void logoutClearsSecurityContextInvalidatesSessionAndMarksUserOffline() {
-        Authentication authentication = new Authentication(userRepository, passwordEncoder);
+        Authentication authentication = new Authentication(userRepository, passwordEncoder, jwtService);
         User user = createUser(true);
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpSession session = new MockHttpSession();

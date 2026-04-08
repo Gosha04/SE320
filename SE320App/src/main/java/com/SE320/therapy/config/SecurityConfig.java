@@ -2,28 +2,38 @@ package com.SE320.therapy.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.SE320.therapy.dto.ApiErrorDetail;
 import com.SE320.therapy.dto.ApiErrorEnvelope;
 import com.SE320.therapy.dto.ApiErrorResponse;
+import com.SE320.therapy.security.JwtAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Configuration
 public class SecurityConfig {
     private final ObjectMapper objectMapper;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+    public SecurityConfig(
+        ObjectProvider<ObjectMapper> objectMapperProvider,
+        ObjectProvider<JwtAuthenticationFilter> jwtAuthenticationFilterProvider
+    ) {
+        this.objectMapper = objectMapperProvider.getIfAvailable(SecurityConfig::defaultObjectMapper);
+        this.jwtAuthenticationFilter = jwtAuthenticationFilterProvider.getIfAvailable();
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
+        HttpSecurity configured = http
             .csrf(AbstractHttpConfigurer::disable)
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/auth/register",
@@ -38,7 +48,13 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers("/sessions/**").hasAnyRole("PATIENT", "DOCTOR")
                 .anyRequest().authenticated()
-            )
+            );
+
+        if (jwtAuthenticationFilter != null) {
+            configured = configured.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        }
+
+        return configured
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint((request, response, authException) -> {
                     response.setStatus(401);
@@ -68,5 +84,9 @@ public class SecurityConfig {
                 })
             )
             .build();
+    }
+
+    private static ObjectMapper defaultObjectMapper() {
+        return new ObjectMapper().findAndRegisterModules();
     }
 }

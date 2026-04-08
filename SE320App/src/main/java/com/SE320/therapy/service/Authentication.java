@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -29,6 +30,7 @@ import com.SE320.therapy.dto.UserResponse;
 import com.SE320.therapy.entity.User;
 import com.SE320.therapy.objects.UserType;
 import com.SE320.therapy.repository.UserRepository;
+import com.SE320.therapy.security.JwtService;
 
 @Service
 public class Authentication implements AuthService {
@@ -36,13 +38,17 @@ public class Authentication implements AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final Map<String, UUID> accessTokens = new ConcurrentHashMap<>();
-    private final Map<String, UUID> refreshTokens = new ConcurrentHashMap<>();
+    private final JwtService jwtService;
+    private final Map<String, java.time.Instant> revokedAccessTokens = new ConcurrentHashMap<>();
+    private final Map<String, java.time.Instant> usedRefreshTokens = new ConcurrentHashMap<>();
     
+    @Autowired
     public Authentication(UserRepository userRepository,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          JwtService jwtService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
 
     @Override
@@ -88,13 +94,15 @@ public class Authentication implements AuthService {
         }
         log.info("Refreshing access token");
 
-        UUID userId = refreshTokens.remove(refreshToken);
-        if (userId == null) {
-            log.warn("Refresh token rejected because it was not found");
+        cleanupTokenRegistries();
+        if (usedRefreshTokens.containsKey(refreshToken)) {
+            log.warn("Refresh token rejected because it was already used");
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid refresh token");
         }
 
-        accessTokens.entrySet().removeIf(entry -> userId.equals(entry.getValue()));
+        JwtService.TokenClaims claims = parseRefreshClaims(refreshToken);
+        UUID userId = claims.userId();
+        usedRefreshTokens.put(refreshToken, claims.expiresAt());
 
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
@@ -110,13 +118,16 @@ public class Authentication implements AuthService {
         }
         log.info("Logging out user from access token");
 
-        UUID userId = accessTokens.remove(accessToken);
-        if (userId == null) {
-            log.warn("Logout rejected because access token was invalid");
+        cleanupTokenRegistries();
+        if (revokedAccessTokens.containsKey(accessToken)) {
+            log.warn("Logout rejected because access token has already been revoked");
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid access token");
         }
 
-        refreshTokens.entrySet().removeIf(entry -> userId.equals(entry.getValue()));
+        JwtService.TokenClaims claims = parseAccessClaims(accessToken);
+        revokedAccessTokens.put(accessToken, claims.expiresAt());
+        UUID userId = claims.userId();
+
         userRepository.findById(userId).ifPresent(user -> setUserOnline(user, false));
         log.info("Logout succeeded for userId={}", userId);
     }
@@ -252,8 +263,6 @@ public class Authentication implements AuthService {
                 log.info("Found authenticated session for userId={}", authenticatedUser.id());
                 userRepository.findById(authenticatedUser.id()).ifPresent(user -> {
                     setUserOnline(user, false);
-                    accessTokens.entrySet().removeIf(entry -> authenticatedUser.id().equals(entry.getValue()));
-                    refreshTokens.entrySet().removeIf(entry -> authenticatedUser.id().equals(entry.getValue()));
                 });
             }
 
@@ -294,13 +303,8 @@ public class Authentication implements AuthService {
     }
 
     private AuthResponse issueTokens(User user) {
-        accessTokens.entrySet().removeIf(entry -> user.getId().equals(entry.getValue()));
-        refreshTokens.entrySet().removeIf(entry -> user.getId().equals(entry.getValue()));
-
-        String accessToken = UUID.randomUUID().toString();
-        String refreshToken = UUID.randomUUID().toString();
-        accessTokens.put(accessToken, user.getId());
-        refreshTokens.put(refreshToken, user.getId());
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
         log.info("Issued new access and refresh tokens for userId={}", user.getId());
 
         return new AuthResponse(
@@ -308,6 +312,28 @@ public class Authentication implements AuthService {
             refreshToken,
             toUserResponse(user)
         );
+    }
+
+    private JwtService.TokenClaims parseAccessClaims(String accessToken) {
+        try {
+            return jwtService.parseAccessToken(accessToken);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid access token");
+        }
+    }
+
+    private JwtService.TokenClaims parseRefreshClaims(String refreshToken) {
+        try {
+            return jwtService.parseRefreshToken(refreshToken);
+        } catch (IllegalArgumentException ex) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid refresh token");
+        }
+    }
+
+    private void cleanupTokenRegistries() {
+        java.time.Instant now = java.time.Instant.now();
+        revokedAccessTokens.entrySet().removeIf(entry -> now.isAfter(entry.getValue()));
+        usedRefreshTokens.entrySet().removeIf(entry -> now.isAfter(entry.getValue()));
     }
 
     private UserResponse toUserResponse(User user) {
