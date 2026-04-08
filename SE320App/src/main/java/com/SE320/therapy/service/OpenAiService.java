@@ -178,6 +178,9 @@ public class OpenAiService implements AiService {
 
         String prompt = """
                 Generate a JSON array of 3 short CBT reframing prompts for this thought.
+                Return only JSON. Do not include markdown, code fences, headings, or explanatory text.
+                Example format:
+                ["What evidence supports this thought?", "What evidence points in a different direction?", "What is a more balanced way to describe this situation?"]
                 Thought: "%s"
                 Related distortion ids: %s
                 Each prompt should help the user examine evidence, consider alternatives, or find a balanced next step.
@@ -304,14 +307,21 @@ public class OpenAiService implements AiService {
                         new OpenAiMessage("user", userPrompt)),
                 0.4);
 
-        JsonNode response = restClient.post()
+        String responseBody = restClient.post()
                 .uri("/chat/completions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .header("Authorization", "Bearer " + apiKey)
                 .body(request)
                 .retrieve()
-                .body(JsonNode.class);
+                .body(String.class);
+
+        JsonNode response;
+        try {
+            response = objectMapper.readTree(responseBody);
+        } catch (IOException ex) {
+            throw new IllegalStateException("Unable to parse OpenAI response body.", ex);
+        }
 
         if (response == null || !response.path("choices").isArray() || response.path("choices").size() == 0) {
             throw new IllegalStateException("OpenAI response did not contain any choices.");
@@ -326,8 +336,20 @@ public class OpenAiService implements AiService {
 
     private List<DistortionSuggestion> parseDistortionSuggestions(String responseContent, List<String> allowedIds) {
         try {
-            List<DistortionSuggestion> suggestions = objectMapper.readValue(
-                    extractJson(responseContent),
+            JsonNode root = objectMapper.readTree(extractJson(responseContent));
+            JsonNode suggestionsNode = root;
+            if (root.isObject()) {
+                if (root.has("distortions")) {
+                    suggestionsNode = root.get("distortions");
+                } else if (root.has("suggestions")) {
+                    suggestionsNode = root.get("suggestions");
+                } else if (root.has("results")) {
+                    suggestionsNode = root.get("results");
+                }
+            }
+
+            List<DistortionSuggestion> suggestions = objectMapper.convertValue(
+                    suggestionsNode,
                     new TypeReference<List<DistortionSuggestion>>() {
                     });
             return suggestions.stream()
@@ -342,9 +364,34 @@ public class OpenAiService implements AiService {
 
     private List<String> parseStringArray(String responseContent) {
         try {
-            return objectMapper.readValue(extractJson(responseContent), new TypeReference<List<String>>() {
-            });
+            String normalized = extractJson(responseContent);
+            JsonNode root = objectMapper.readTree(normalized);
+            if (root.isArray()) {
+                return objectMapper.convertValue(root, new TypeReference<List<String>>() {
+                });
+            }
+
+            if (root.isObject()) {
+                if (root.has("prompts") && root.get("prompts").isArray()) {
+                    return objectMapper.convertValue(root.get("prompts"), new TypeReference<List<String>>() {
+                    });
+                }
+                if (root.has("items") && root.get("items").isArray()) {
+                    return objectMapper.convertValue(root.get("items"), new TypeReference<List<String>>() {
+                    });
+                }
+                if (root.has("reframingPrompts") && root.get("reframingPrompts").isArray()) {
+                    return objectMapper.convertValue(root.get("reframingPrompts"), new TypeReference<List<String>>() {
+                    });
+                }
+            }
+
+            throw new IllegalStateException("Response JSON did not contain a prompt array.");
         } catch (JsonProcessingException ex) {
+            List<String> lineItems = parseLineList(responseContent);
+            if (!lineItems.isEmpty()) {
+                return lineItems;
+            }
             throw new IllegalStateException("Unable to parse string array response.", ex);
         }
     }
@@ -356,6 +403,19 @@ public class OpenAiService implements AiService {
             return matcher.group(1).trim();
         }
         return trimmed;
+    }
+
+    private List<String> parseLineList(String content) {
+        if (content == null || content.isBlank()) {
+            return List.of();
+        }
+
+        return content.lines()
+                .map(String::trim)
+                .map(line -> line.replaceFirst("^[-*•]\\s*", ""))
+                .map(line -> line.replaceFirst("^\\d+\\.\\s*", ""))
+                .filter(line -> !line.isBlank())
+                .toList();
     }
 
     private boolean isConfigured() {

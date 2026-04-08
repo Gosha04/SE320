@@ -1,10 +1,12 @@
 package com.SE320.therapy.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -101,5 +103,44 @@ class OpenAiServiceTest {
 
         assertTrue(response.contains("hardest part"));
         assertTrue(response.contains("small next step"));
+    }
+
+    @Test
+    void parseStringArray_acceptsObjectWrappedPromptArrays() throws Exception {
+        Method method = OpenAiService.class.getDeclaredMethod("parseStringArray", String.class);
+        method.setAccessible(true);
+
+        @SuppressWarnings("unchecked")
+        List<String> prompts = (List<String>) method.invoke(
+                openAiService,
+                """
+                {
+                  "prompts": [
+                    "What evidence supports this thought?",
+                    "What evidence points in a different direction?"
+                  ]
+                }
+                """);
+
+        assertEquals(2, prompts.size());
+        assertEquals("What evidence supports this thought?", prompts.get(0));
+    }
+
+    @Test
+    void parseStringArray_acceptsNumberedListsAsFallback() throws Exception {
+        Method method = OpenAiService.class.getDeclaredMethod("parseStringArray", String.class);
+        method.setAccessible(true);
+
+        @SuppressWarnings("unchecked")
+        List<String> prompts = (List<String>) method.invoke(
+                openAiService,
+                """
+                1. What evidence supports this thought?
+                2. What evidence points in a different direction?
+                3. What is a more balanced way to describe this situation?
+                """);
+
+        assertEquals(3, prompts.size());
+        assertEquals("What evidence supports this thought?", prompts.get(0));
     }
 }
