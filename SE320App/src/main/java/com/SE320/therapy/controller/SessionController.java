@@ -13,6 +13,9 @@ import com.SE320.therapy.service.SessionService;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -58,6 +61,27 @@ public class SessionController {
     @GetMapping
     public List<SessionLibraryItemResponse> getSessionLibrary() {
         return sessionService.getSessionLibrary();
+    }
+
+    @Operation(summary = "Get session library (paginated)", description = "Returns the CBT session library using Spring pagination.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Session library returned successfully"),
+        @ApiResponse(responseCode = "400", description = "Invalid pagination request", content = @Content(schema = @Schema(implementation = ApiErrorEnvelope.class)))
+    })
+    @GetMapping("/page")
+    public Page<SessionLibraryItemResponse> getSessionLibraryPage(Pageable pageable) {
+        List<SessionLibraryItemResponse> sessions = sessionService.getSessionLibrary();
+        if (pageable == null || pageable.isUnpaged()) {
+            return new PageImpl<>(sessions, Pageable.unpaged(), sessions.size());
+        }
+
+        int start = Math.toIntExact(pageable.getOffset());
+        if (start >= sessions.size()) {
+            return new PageImpl<>(List.of(), pageable, sessions.size());
+        }
+
+        int end = Math.min(start + pageable.getPageSize(), sessions.size());
+        return new PageImpl<>(sessions.subList(start, end), pageable, sessions.size());
     }
 
     @Operation(summary = "Get session details", description = "Returns the details for a CBT session in the library.")
