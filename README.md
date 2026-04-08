@@ -194,4 +194,4 @@ The ERD is documented in:
 
 - `schema.sql` and `data.sql` seed core CBT and coping data on startup.
 - If `OPENAI_API_KEY` is not set, AI features still work using fallback logic.
-- Token handling in `Authentication` currently uses in-memory token maps.
+- Authentication uses JWT access and refresh tokens signed with `jwt.secret`.
