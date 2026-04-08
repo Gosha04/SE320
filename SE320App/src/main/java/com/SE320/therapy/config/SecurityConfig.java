@@ -10,7 +10,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import com.SE320.therapy.dto.ApiErrorDetail;
 import com.SE320.therapy.dto.ApiErrorEnvelope;
 import com.SE320.therapy.dto.ApiErrorResponse;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Configuration
 public class SecurityConfig {

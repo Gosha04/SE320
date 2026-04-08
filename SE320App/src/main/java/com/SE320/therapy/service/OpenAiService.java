@@ -9,6 +9,8 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Service
 public class OpenAiService implements AiService {
 
+    private static final Logger log = LoggerFactory.getLogger(OpenAiService.class);
     private static final Pattern JSON_BLOCK_PATTERN = Pattern.compile("```(?:json)?\\s*(.*?)```", Pattern.DOTALL);
     private static final List<String> CRISIS_RESOURCES = List.of(
             "Call or text 988 for the Suicide & Crisis Lifeline.",
@@ -90,11 +93,13 @@ public class OpenAiService implements AiService {
 
         CrisisDetectionResponse crisisResponse = detectCrisis(userMessage);
         if (crisisResponse.crisisDetected() && crisisResponse.severityLevel() == SeverityLevel.SIGNIFICANT) {
+            log.warn("Using crisis safety response instead of standard chat generation for sessionId={}", sessionId);
             return "I'm really glad you said that. Your safety matters most right now. "
                     + "Please contact immediate support now: " + String.join(" ", CRISIS_RESOURCES);
         }
 
         if (!isConfigured()) {
+            log.warn("OPENAI_API_KEY is not configured. Using fallback therapeutic response for sessionId={}", sessionId);
             return fallbackTherapeuticResponse(userMessage, context);
         }
 
@@ -113,8 +118,11 @@ public class OpenAiService implements AiService {
                 """.formatted(blankToNone(context), userMessage);
 
         try {
+            log.info("Using OpenAI chat completion for therapeutic response. sessionId={} model={}", sessionId, model);
             return callForText("You are a compassionate CBT assistant for burnout recovery.", prompt);
         } catch (RuntimeException ex) {
+            log.warn("Falling back to local therapeutic response for sessionId={} because OpenAI call failed: {}", sessionId, ex.getMessage());
+            log.debug("OpenAI chat failure details", ex);
             return fallbackTherapeuticResponse(userMessage, context);
         }
     }
@@ -132,6 +140,7 @@ public class OpenAiService implements AiService {
                 .toList();
 
         if (!isConfigured()) {
+            log.warn("OPENAI_API_KEY is not configured. Using heuristic distortion analysis.");
             return heuristicDistortionSuggestions(automaticThought);
         }
 
@@ -144,11 +153,14 @@ public class OpenAiService implements AiService {
                 """.formatted(distortionIds, automaticThought.replace("\"", "\\\""));
 
         try {
+            log.info("Using OpenAI for distortion analysis with model={}", model);
             String content = callForText(
                     "You identify CBT cognitive distortions and respond with valid JSON only.",
                     prompt);
             return parseDistortionSuggestions(content, distortionIds);
         } catch (RuntimeException ex) {
+            log.warn("Falling back to heuristic distortion analysis because OpenAI call failed: {}", ex.getMessage());
+            log.debug("OpenAI distortion analysis failure details", ex);
             return heuristicDistortionSuggestions(automaticThought);
         }
     }
@@ -160,6 +172,7 @@ public class OpenAiService implements AiService {
         }
 
         if (!isConfigured()) {
+            log.warn("OPENAI_API_KEY is not configured. Using fallback reframing prompts.");
             return fallbackReframingPrompts(thought, distortionIds);
         }
 
@@ -171,11 +184,14 @@ public class OpenAiService implements AiService {
                 """.formatted(thought.replace("\"", "\\\""), distortionIds == null ? List.of() : distortionIds);
 
         try {
+            log.info("Using OpenAI for reframing prompt generation with model={}", model);
             String content = callForText(
                     "You generate concise CBT reframing prompts and respond with valid JSON only.",
                     prompt);
             return parseStringArray(content);
         } catch (RuntimeException ex) {
+            log.warn("Falling back to local reframing prompts because OpenAI call failed: {}", ex.getMessage());
+            log.debug("OpenAI reframing prompt failure details", ex);
             return fallbackReframingPrompts(thought, distortionIds);
         }
     }
@@ -189,6 +205,7 @@ public class OpenAiService implements AiService {
 
         SeverityLevel keywordSeverity = keywordsDetected.isEmpty() ? SeverityLevel.MILD : SeverityLevel.SIGNIFICANT;
         if (!isConfigured()) {
+            log.warn("OPENAI_API_KEY is not configured. Using keyword-only crisis detection.");
             return buildCrisisResponse(keywordsDetected, keywordSeverity);
         }
 
@@ -202,6 +219,7 @@ public class OpenAiService implements AiService {
                 """.formatted((text == null ? "" : text).replace("\"", "\\\""));
 
         try {
+            log.info("Using OpenAI for crisis detection with model={}", model);
             String content = callForText(
                     "You assess crisis risk conservatively and respond with valid JSON only.",
                     prompt);
@@ -218,6 +236,8 @@ public class OpenAiService implements AiService {
             SeverityLevel severity = maxSeverity(keywordSeverity, mapRiskLevel(root.path("riskLevel").asText("none")));
             return buildCrisisResponse(aiKeywords, severity);
         } catch (RuntimeException | IOException ex) {
+            log.warn("Falling back to keyword-only crisis detection because OpenAI call failed: {}", ex.getMessage());
+            log.debug("OpenAI crisis detection failure details", ex);
             return buildCrisisResponse(keywordsDetected, keywordSeverity);
         }
     }
@@ -254,6 +274,7 @@ public class OpenAiService implements AiService {
                 .orElse("");
 
         if (!isConfigured()) {
+            log.warn("OPENAI_API_KEY is not configured. Using fallback session summary for sessionId={}", sessionId);
             return fallbackSessionSummary(transcript);
         }
 
@@ -266,8 +287,11 @@ public class OpenAiService implements AiService {
                 """.formatted(transcript);
 
         try {
+            log.info("Using OpenAI for session summarization. sessionId={} model={}", sessionId, model);
             return callForText("You summarize CBT sessions clearly and concisely.", prompt);
         } catch (RuntimeException ex) {
+            log.warn("Falling back to local session summary for sessionId={} because OpenAI call failed: {}", sessionId, ex.getMessage());
+            log.debug("OpenAI session summary failure details", ex);
             return fallbackSessionSummary(transcript);
         }
     }
