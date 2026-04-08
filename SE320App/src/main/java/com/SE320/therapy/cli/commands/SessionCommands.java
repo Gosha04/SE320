@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 
 import com.SE320.therapy.controller.SessionController;
 import com.SE320.therapy.dto.EndSessionRequest;
+import com.SE320.therapy.dto.SendChatMessageRequest;
+import com.SE320.therapy.dto.SessionChatResponse;
 import com.SE320.therapy.dto.SessionLibraryItemResponse;
 import com.SE320.therapy.dto.SessionRunResponse;
 import com.SE320.therapy.dto.StartSessionRequest;
@@ -122,6 +124,7 @@ public class SessionCommands implements Command {
             System.out.println("Session ID: " + session.sessionId());
             System.out.println("Title: " + session.title());
             System.out.println("Status: " + session.status());
+            runInteractiveSession(userId, session, false);
         } catch (IllegalArgumentException | IllegalStateException e) {
             System.out.println(e.getMessage());
         } catch (Exception e) {
@@ -159,6 +162,7 @@ public class SessionCommands implements Command {
             System.out.println("Session ID: " + session.sessionId());
             System.out.println("Title: " + session.title());
             System.out.println("Status: " + session.status());
+            runInteractiveSession(userId, session, true);
         } catch (IllegalArgumentException | IllegalStateException e) {
             System.out.println(e.getMessage());
         } catch (Exception e) {
@@ -256,5 +260,61 @@ public class SessionCommands implements Command {
         System.out.println("6. back");
         System.out.println("Type a command name, number, or help.");
         System.out.println();
+    }
+
+    private void runInteractiveSession(UUID userId, SessionRunResponse session, boolean resumed) {
+        System.out.println();
+        System.out.println("--- CBT Session Chat ---");
+        System.out.println("Type your message to chat with the assistant.");
+        System.out.println("Type pause to return to the session menu without ending the session.");
+        System.out.println("Type stop or end to finish the session.");
+        if (resumed) {
+            System.out.println("Assistant: Welcome back to " + session.title() + ". What would you like to work on next?");
+        } else {
+            System.out.println("Assistant: Welcome to " + session.title() + ". What would you like to focus on today?");
+        }
+
+        while (true) {
+            System.out.print("You: ");
+            String input = scanner.nextLine().trim();
+
+            if (input.isBlank()) {
+                System.out.println("Please enter a message or type pause or end.");
+                continue;
+            }
+
+            String command = input.toLowerCase(Locale.ROOT);
+            if (command.equals("pause") || command.equals("menu") || command.equals("back")) {
+                System.out.println("Session paused. You can continue it later from the session menu using its session ID.");
+                return;
+            }
+
+            if (command.equals("stop") || command.equals("end")) {
+                sessionController.endActiveSession(session.sessionId(), new EndSessionRequest(userId, null));
+                System.out.println("Session ended successfully.");
+                return;
+            }
+
+            try {
+                SessionChatResponse chatResponse = sessionController.sendChatMessage(
+                    session.sessionId(),
+                    new SendChatMessageRequest(userId, input, null)
+                );
+                if (chatResponse != null
+                        && chatResponse.assistantMessage() != null
+                        && chatResponse.assistantMessage().content() != null
+                        && !chatResponse.assistantMessage().content().isBlank()) {
+                    System.out.println("Assistant: " + chatResponse.assistantMessage().content());
+                } else {
+                    System.out.println("Assistant: I am here with you. Tell me a little more.");
+                }
+            } catch (IllegalArgumentException | IllegalStateException e) {
+                System.out.println(e.getMessage());
+                return;
+            } catch (Exception e) {
+                System.out.println("Unable to send your message right now.");
+                return;
+            }
+        }
     }
 }

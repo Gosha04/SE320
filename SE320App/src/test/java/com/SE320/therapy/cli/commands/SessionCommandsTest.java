@@ -1,7 +1,10 @@
 package com.SE320.therapy.cli.commands;
 
 import com.SE320.therapy.controller.SessionController;
+import com.SE320.therapy.dto.ChatMessageResponse;
 import com.SE320.therapy.dto.EndSessionRequest;
+import com.SE320.therapy.dto.SendChatMessageRequest;
+import com.SE320.therapy.dto.SessionChatResponse;
 import com.SE320.therapy.dto.SessionLibraryItemResponse;
 import com.SE320.therapy.dto.SessionRunResponse;
 import com.SE320.therapy.entity.CBTSession;
@@ -75,17 +78,24 @@ public class SessionCommandsTest {
             new SessionLibraryItemResponse(1003L, "Cognitive Restructuring", "desc", 20, 3, List.of("COGNITIVE"))
         );
         sessionController.sessionToStart = buildRunResponse(1001L, "Thought Record", "IN_PROGRESS");
+        sessionController.chatResponse = buildChatResponse(1001L, "Let's look at that thought together.");
 
-        String output = runCommands("2\n1\n6\n", "user1");
+        String output = runCommands("2\n1\nI keep assuming the worst.\npause\n6\n", "user1");
 
         assertTrue(output.contains("--- Start New Session ---"));
         assertTrue(output.contains("New CBT session started successfully."));
         assertTrue(output.contains("Session ID: 1001"));
         assertTrue(output.contains("Title: Thought Record"));
         assertTrue(output.contains("Status: IN_PROGRESS"));
+        assertTrue(output.contains("--- CBT Session Chat ---"));
+        assertTrue(output.contains("Assistant: Welcome to Thought Record. What would you like to focus on today?"));
+        assertTrue(output.contains("Assistant: Let's look at that thought together."));
+        assertTrue(output.contains("Session paused. You can continue it later from the session menu using its session ID."));
         assertEquals(1, sessionController.viewSessionLibraryCalls);
         assertEquals(UUID.fromString("11111111-1111-1111-1111-111111111111"), sessionController.lastStartedUserId);
         assertEquals(1001L, sessionController.lastStartedSessionId);
+        assertEquals(1001L, sessionController.lastChattedSessionId);
+        assertEquals("I keep assuming the worst.", sessionController.lastChatMessage);
     }
 
     @Test
@@ -100,16 +110,21 @@ public class SessionCommandsTest {
     @Test
     void execute_continuesSession_whenValidSessionIdIsEntered() {
         sessionController.sessionToContinue = buildRunResponse(1L, "Thought Record", "IN_PROGRESS");
+        sessionController.chatResponse = buildChatResponse(1L, "What evidence supports that thought?");
 
-        String output = runCommands("3\n1\n6\n", "user1");
+        String output = runCommands("3\n1\nI'm still stuck.\npause\n6\n", "user1");
 
         assertTrue(output.contains("Enter session ID to continue:"));
         assertTrue(output.contains("Session continued successfully."));
         assertTrue(output.contains("Session ID: 1"));
         assertTrue(output.contains("Title: Thought Record"));
         assertTrue(output.contains("Status: IN_PROGRESS"));
+        assertTrue(output.contains("Assistant: Welcome back to Thought Record. What would you like to work on next?"));
+        assertTrue(output.contains("Assistant: What evidence supports that thought?"));
         assertEquals(UUID.fromString("11111111-1111-1111-1111-111111111111"), sessionController.lastContinuedUserId);
         assertEquals(1L, sessionController.lastContinuedSessionId);
+        assertEquals(1L, sessionController.lastChattedSessionId);
+        assertEquals("I'm still stuck.", sessionController.lastChatMessage);
     }
 
     @Test
@@ -126,6 +141,20 @@ public class SessionCommandsTest {
         assertEquals(1, sessionController.viewSessionHistoryCalls);
         assertEquals(UUID.fromString("11111111-1111-1111-1111-111111111111"), sessionController.lastEndedUserId);
         assertEquals(1L, sessionController.lastEndedSessionId);
+    }
+
+    @Test
+    void execute_endsSessionFromInteractiveChat_whenEndCommandIsEntered() {
+        sessionController.library = List.of(
+            new SessionLibraryItemResponse(1001L, "Thought Record", "desc", 20, 1, List.of("COGNITIVE"))
+        );
+        sessionController.sessionToStart = buildRunResponse(1001L, "Thought Record", "IN_PROGRESS");
+
+        String output = runCommands("2\n1\nend\n6\n", "user1");
+
+        assertTrue(output.contains("Session ended successfully."));
+        assertEquals(UUID.fromString("11111111-1111-1111-1111-111111111111"), sessionController.lastEndedUserId);
+        assertEquals(1001L, sessionController.lastEndedSessionId);
     }
 
     @Test
@@ -231,6 +260,9 @@ public class SessionCommandsTest {
         private Long lastContinuedSessionId;
         private UUID lastEndedUserId;
         private Long lastEndedSessionId;
+        private SessionChatResponse chatResponse;
+        private Long lastChattedSessionId;
+        private String lastChatMessage;
 
         @Override
         public List<SessionLibraryItemResponse> getSessionLibrary() {
@@ -264,6 +296,13 @@ public class SessionCommandsTest {
             lastEndedSessionId = sessionId;
             return buildRunResponse(sessionId, "Thought Record", "COMPLETED");
         }
+
+        @Override
+        public SessionChatResponse sendChatMessage(Long sessionId, SendChatMessageRequest request) {
+            lastChattedSessionId = sessionId;
+            lastChatMessage = request.message();
+            return chatResponse;
+        }
     }
 
     private static SessionRunResponse buildRunResponse(Long sessionId, String title, String status) {
@@ -277,6 +316,15 @@ public class SessionCommandsTest {
             null,
             LocalDateTime.now(),
             null
+        );
+    }
+
+    private static SessionChatResponse buildChatResponse(Long sessionId, String assistantReply) {
+        return new SessionChatResponse(
+            UUID.randomUUID(),
+            sessionId,
+            new ChatMessageResponse(UUID.randomUUID(), "USER", "ignored", "TEXT", LocalDateTime.now()),
+            new ChatMessageResponse(UUID.randomUUID(), "ASSISTANT", assistantReply, "TEXT", LocalDateTime.now())
         );
     }
 }
