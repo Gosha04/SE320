@@ -1,0 +1,28 @@
+{
+  "documents": [
+    {
+      "id": "crisis-warning-signs",
+      "category": "crisis",
+      "topic": "warning-signs",
+      "content": "Crisis warning signs include suicidal language, hopelessness, feeling like a burden, intent to self-harm, and escalating inability to stay safe."
+    },
+    {
+      "id": "crisis-de-escalation",
+      "category": "crisis",
+      "topic": "de-escalation",
+      "content": "Crisis de-escalation emphasizes calm, direct language, immediate support, encouraging local emergency resources, and prioritizing safety over reflective CBT work."
+    },
+    {
+      "id": "crisis-safety-planning",
+      "category": "crisis",
+      "topic": "safety-planning",
+      "content": "Safety planning typically includes warning signs, internal coping strategies, supportive contacts, professional resources, and reducing access to means of self-harm."
+    },
+    {
+      "id": "crisis-emergency-resources",
+      "category": "crisis",
+      "topic": "emergency-resources",
+      "content": "When immediate danger is present, users should contact 988, local emergency services, or the nearest emergency room without delay."
+    }
+  ]
+}

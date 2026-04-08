@@ -10,4 +10,6 @@ public interface VectorStore {
     List<VectorMatch> similaritySearch(double[] queryEmbedding, int limit);
 
     long size();
+
+    void clear();
 }

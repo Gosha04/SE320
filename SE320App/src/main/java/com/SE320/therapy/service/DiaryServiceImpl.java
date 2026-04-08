@@ -6,6 +6,7 @@ import com.SE320.therapy.entity.User;
 import com.SE320.therapy.exception.ApiException;
 import com.SE320.therapy.repository.DiaryEntryRepository;
 import com.SE320.therapy.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -21,11 +22,20 @@ public class DiaryServiceImpl implements DiaryService {
 
     private final DiaryEntryRepository diaryEntryRepository;
     private final UserRepository userRepository;
+    private final AiService aiService;
 
     public DiaryServiceImpl(DiaryEntryRepository diaryEntryRepository,
                             UserRepository userRepository) {
+        this(diaryEntryRepository, userRepository, null);
+    }
+
+    @Autowired
+    public DiaryServiceImpl(DiaryEntryRepository diaryEntryRepository,
+                            UserRepository userRepository,
+                            AiService aiService) {
         this.diaryEntryRepository = diaryEntryRepository;
         this.userRepository = userRepository;
+        this.aiService = aiService;
     }
 
     @Override
@@ -130,6 +140,10 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     public DiaryInsights getInsights(UUID userId) {
+        if (aiService != null) {
+            return aiService.generateInsights(userId);
+        }
+
         List<DiaryEntry> entries = diaryEntryRepository.findByUser_IdAndDeletedFalse(userId);
 
         if (entries.isEmpty()) {
@@ -155,11 +169,30 @@ public class DiaryServiceImpl implements DiaryService {
 
     @Override
     public List<DistortionSuggestion> suggestDistortions(String thought) {
-        List<DistortionSuggestion> suggestions = new ArrayList<>();
-
         if (thought == null || thought.trim().isEmpty()) {
             throw new IllegalArgumentException("Thought cannot be empty.");
         }
+
+        if (aiService != null) {
+            List<DistortionSuggestion> suggestions = new ArrayList<>(aiService.analyzeThought(thought));
+            if (!suggestions.isEmpty()) {
+                List<String> distortionIds = suggestions.stream()
+                        .map(DistortionSuggestion::getDistortionId)
+                        .toList();
+                List<String> reframingPrompts = aiService.generateReframingPrompts(thought, distortionIds);
+                if (!reframingPrompts.isEmpty()) {
+                    DistortionSuggestion firstSuggestion = suggestions.get(0);
+                    String reasoning = firstSuggestion.getReasoning() == null ? "" : firstSuggestion.getReasoning().trim();
+                    String updatedReasoning = reasoning.isEmpty()
+                            ? "Reframing prompt: " + reframingPrompts.get(0)
+                            : reasoning + " Reframing prompt: " + reframingPrompts.get(0);
+                    firstSuggestion.setReasoning(updatedReasoning);
+                }
+            }
+            return suggestions;
+        }
+
+        List<DistortionSuggestion> suggestions = new ArrayList<>();
 
         String lowerThought = thought.toLowerCase();
 

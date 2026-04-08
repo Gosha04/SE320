@@ -1,0 +1,442 @@
+package com.SE320.therapy.service;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+
+import com.SE320.therapy.ai.RagContextBuilder;
+import com.SE320.therapy.dto.CrisisDetectionResponse;
+import com.SE320.therapy.dto.DiaryInsights;
+import com.SE320.therapy.dto.DistortionSuggestion;
+import com.SE320.therapy.entity.ChatMessage;
+import com.SE320.therapy.entity.DiaryEntry;
+import com.SE320.therapy.entity.UserSession;
+import com.SE320.therapy.objects.SeverityLevel;
+import com.SE320.therapy.repository.ChatMessageRepository;
+import com.SE320.therapy.repository.CognitiveDistortionRepository;
+import com.SE320.therapy.repository.DiaryEntryRepository;
+import com.SE320.therapy.repository.UserSessionRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@Service
+public class OpenAiService implements AiService {
+
+    private static final Pattern JSON_BLOCK_PATTERN = Pattern.compile("```(?:json)?\\s*(.*?)```", Pattern.DOTALL);
+    private static final List<String> CRISIS_RESOURCES = List.of(
+            "Call or text 988 for the Suicide & Crisis Lifeline.",
+            "Text HOME to 741741 to connect with the Crisis Text Line.",
+            "Call 911 or go to the nearest emergency room if there is immediate danger.");
+    private static final List<String> CRISIS_KEYWORDS = List.of(
+            "suicide",
+            "kill myself",
+            "end it all",
+            "no reason to live",
+            "better off dead",
+            "can't go on",
+            "want to die",
+            "hurt myself",
+            "self-harm");
+
+    private final RestClient restClient;
+    private final ObjectMapper objectMapper;
+    private final RagContextBuilder ragContextBuilder;
+    private final UserSessionRepository userSessionRepository;
+    private final DiaryEntryRepository diaryEntryRepository;
+    private final ChatMessageRepository chatMessageRepository;
+    private final CognitiveDistortionRepository cognitiveDistortionRepository;
+    private final String apiKey;
+    private final String model;
+
+    public OpenAiService(
+            RestClient.Builder restClientBuilder,
+            ObjectMapper objectMapper,
+            RagContextBuilder ragContextBuilder,
+            UserSessionRepository userSessionRepository,
+            DiaryEntryRepository diaryEntryRepository,
+            ChatMessageRepository chatMessageRepository,
+            CognitiveDistortionRepository cognitiveDistortionRepository,
+            @Value("${openai.api-key:}") String apiKey,
+            @Value("${openai.chat.model:gpt-4o-mini}") String model,
+            @Value("${openai.base-url:https://api.openai.com/v1}") String baseUrl) {
+        this.restClient = restClientBuilder.baseUrl(baseUrl).build();
+        this.objectMapper = objectMapper;
+        this.ragContextBuilder = ragContextBuilder;
+        this.userSessionRepository = userSessionRepository;
+        this.diaryEntryRepository = diaryEntryRepository;
+        this.chatMessageRepository = chatMessageRepository;
+        this.cognitiveDistortionRepository = cognitiveDistortionRepository;
+        this.apiKey = apiKey == null ? "" : apiKey.trim();
+        this.model = model;
+    }
+
+    @Override
+    public String generateResponse(UUID sessionId, String userMessage) {
+        UserSession userSession = userSessionRepository.findById(sessionId).orElse(null);
+        UUID userId = userSession == null || userSession.getUser() == null ? null : userSession.getUser().getId();
+        String context = userId == null ? "" : ragContextBuilder.buildContext(userId, sessionId, userMessage);
+
+        CrisisDetectionResponse crisisResponse = detectCrisis(userMessage);
+        if (crisisResponse.crisisDetected() && crisisResponse.severityLevel() == SeverityLevel.SIGNIFICANT) {
+            return "I'm really glad you said that. Your safety matters most right now. "
+                    + "Please contact immediate support now: " + String.join(" ", CRISIS_RESOURCES);
+        }
+
+        if (!isConfigured()) {
+            return fallbackTherapeuticResponse(userMessage, context);
+        }
+
+        String prompt = """
+                You are a compassionate AI therapy assistant specializing in Cognitive Behavioral Therapy (CBT) for workplace burnout recovery.
+                Maintain an empathetic, non-judgmental, and supportive tone.
+                Use Socratic questioning and practical CBT guidance.
+                Never provide a medical diagnosis.
+                If crisis signals appear, prioritize safety and encourage immediate support.
+
+                Context about the user and relevant CBT knowledge:
+                %s
+
+                User message:
+                %s
+                """.formatted(blankToNone(context), userMessage);
+
+        try {
+            return callForText("You are a compassionate CBT assistant for burnout recovery.", prompt);
+        } catch (RuntimeException ex) {
+            return fallbackTherapeuticResponse(userMessage, context);
+        }
+    }
+
+    @Override
+    public List<DistortionSuggestion> analyzeThought(String automaticThought) {
+        if (automaticThought == null || automaticThought.isBlank()) {
+            return List.of();
+        }
+
+        List<String> distortionIds = cognitiveDistortionRepository.findAll()
+                .stream()
+                .map(distortion -> distortion.getId())
+                .sorted()
+                .toList();
+
+        if (!isConfigured()) {
+            return heuristicDistortionSuggestions(automaticThought);
+        }
+
+        String prompt = """
+                Analyze the following automatic thought for cognitive distortions.
+                Return a JSON array of objects with fields distortionId, confidence, and reasoning.
+                Only use distortion IDs from this list: %s
+
+                Thought: "%s"
+                """.formatted(distortionIds, automaticThought.replace("\"", "\\\""));
+
+        try {
+            String content = callForText(
+                    "You identify CBT cognitive distortions and respond with valid JSON only.",
+                    prompt);
+            return parseDistortionSuggestions(content, distortionIds);
+        } catch (RuntimeException ex) {
+            return heuristicDistortionSuggestions(automaticThought);
+        }
+    }
+
+    @Override
+    public List<String> generateReframingPrompts(String thought, List<String> distortionIds) {
+        if (thought == null || thought.isBlank()) {
+            return List.of();
+        }
+
+        if (!isConfigured()) {
+            return fallbackReframingPrompts(thought, distortionIds);
+        }
+
+        String prompt = """
+                Generate a JSON array of 3 short CBT reframing prompts for this thought.
+                Thought: "%s"
+                Related distortion ids: %s
+                Each prompt should help the user examine evidence, consider alternatives, or find a balanced next step.
+                """.formatted(thought.replace("\"", "\\\""), distortionIds == null ? List.of() : distortionIds);
+
+        try {
+            String content = callForText(
+                    "You generate concise CBT reframing prompts and respond with valid JSON only.",
+                    prompt);
+            return parseStringArray(content);
+        } catch (RuntimeException ex) {
+            return fallbackReframingPrompts(thought, distortionIds);
+        }
+    }
+
+    @Override
+    public CrisisDetectionResponse detectCrisis(String text) {
+        String normalized = text == null ? "" : text.toLowerCase(Locale.ROOT);
+        List<String> keywordsDetected = CRISIS_KEYWORDS.stream()
+                .filter(normalized::contains)
+                .toList();
+
+        SeverityLevel keywordSeverity = keywordsDetected.isEmpty() ? SeverityLevel.MILD : SeverityLevel.SIGNIFICANT;
+        if (!isConfigured()) {
+            return buildCrisisResponse(keywordsDetected, keywordSeverity);
+        }
+
+        String prompt = """
+                Analyze the following text for crisis indicators.
+                Return a JSON object with fields riskLevel, keywordsDetected, recommendedAction, and reasoning.
+                riskLevel must be one of: none, low, medium, high, critical.
+                recommendedAction must be one of: none, show_resources, show_crisis_hub, immediate_intervention.
+
+                Text: "%s"
+                """.formatted((text == null ? "" : text).replace("\"", "\\\""));
+
+        try {
+            String content = callForText(
+                    "You assess crisis risk conservatively and respond with valid JSON only.",
+                    prompt);
+            JsonNode root = objectMapper.readTree(extractJson(content));
+            List<String> aiKeywords = new ArrayList<>(keywordsDetected);
+            if (root.path("keywordsDetected").isArray()) {
+                for (JsonNode node : root.path("keywordsDetected")) {
+                    String value = node.asText().trim();
+                    if (!value.isEmpty() && !aiKeywords.contains(value)) {
+                        aiKeywords.add(value);
+                    }
+                }
+            }
+            SeverityLevel severity = maxSeverity(keywordSeverity, mapRiskLevel(root.path("riskLevel").asText("none")));
+            return buildCrisisResponse(aiKeywords, severity);
+        } catch (RuntimeException | IOException ex) {
+            return buildCrisisResponse(keywordsDetected, keywordSeverity);
+        }
+    }
+
+    @Override
+    public DiaryInsights generateInsights(UUID userId) {
+        List<DiaryEntry> entries = diaryEntryRepository.findByUser_IdAndDeletedFalse(userId);
+        if (entries.isEmpty()) {
+            return new DiaryInsights(0, 0.0, 0);
+        }
+
+        int totalImprovement = 0;
+        int bestImprovement = Integer.MIN_VALUE;
+        for (DiaryEntry entry : entries) {
+            int improvement = entry.getMoodAfter() - entry.getMoodBefore();
+            totalImprovement += improvement;
+            bestImprovement = Math.max(bestImprovement, improvement);
+        }
+
+        double averageImprovement = (double) totalImprovement / entries.size();
+        return new DiaryInsights(entries.size(), averageImprovement, bestImprovement);
+    }
+
+    @Override
+    public String summarizeSession(UUID sessionId) {
+        List<ChatMessage> messages = chatMessageRepository.findByUserSession_IdOrderByTimestampAsc(sessionId);
+        if (messages.isEmpty()) {
+            return "Session completed. No transcript was available for summarization.";
+        }
+
+        String transcript = messages.stream()
+                .map(message -> message.getRole() + ": " + message.getContent())
+                .reduce((left, right) -> left + "\n" + right)
+                .orElse("");
+
+        if (!isConfigured()) {
+            return fallbackSessionSummary(transcript);
+        }
+
+        String prompt = """
+                Summarize this CBT session in 3-4 concise sentences.
+                Include the main theme, one helpful CBT technique, and one realistic next step.
+
+                Transcript:
+                %s
+                """.formatted(transcript);
+
+        try {
+            return callForText("You summarize CBT sessions clearly and concisely.", prompt);
+        } catch (RuntimeException ex) {
+            return fallbackSessionSummary(transcript);
+        }
+    }
+
+    private String callForText(String systemPrompt, String userPrompt) {
+        OpenAiChatRequest request = new OpenAiChatRequest(
+                model,
+                List.of(
+                        new OpenAiMessage("system", systemPrompt),
+                        new OpenAiMessage("user", userPrompt)),
+                0.4);
+
+        JsonNode response = restClient.post()
+                .uri("/chat/completions")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + apiKey)
+                .body(request)
+                .retrieve()
+                .body(JsonNode.class);
+
+        if (response == null || !response.path("choices").isArray() || response.path("choices").size() == 0) {
+            throw new IllegalStateException("OpenAI response did not contain any choices.");
+        }
+
+        String content = response.path("choices").get(0).path("message").path("content").asText();
+        if (content == null || content.isBlank()) {
+            throw new IllegalStateException("OpenAI response content was empty.");
+        }
+        return content.trim();
+    }
+
+    private List<DistortionSuggestion> parseDistortionSuggestions(String responseContent, List<String> allowedIds) {
+        try {
+            List<DistortionSuggestion> suggestions = objectMapper.readValue(
+                    extractJson(responseContent),
+                    new TypeReference<List<DistortionSuggestion>>() {
+                    });
+            return suggestions.stream()
+                    .filter(suggestion -> suggestion.getDistortionId() != null)
+                    .filter(suggestion -> allowedIds.isEmpty() || allowedIds.contains(suggestion.getDistortionId()))
+                    .sorted(Comparator.comparingDouble(DistortionSuggestion::getConfidence).reversed())
+                    .toList();
+        } catch (JsonProcessingException ex) {
+            throw new IllegalStateException("Unable to parse distortion suggestions.", ex);
+        }
+    }
+
+    private List<String> parseStringArray(String responseContent) {
+        try {
+            return objectMapper.readValue(extractJson(responseContent), new TypeReference<List<String>>() {
+            });
+        } catch (JsonProcessingException ex) {
+            throw new IllegalStateException("Unable to parse string array response.", ex);
+        }
+    }
+
+    private String extractJson(String content) {
+        String trimmed = content == null ? "" : content.trim();
+        Matcher matcher = JSON_BLOCK_PATTERN.matcher(trimmed);
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        }
+        return trimmed;
+    }
+
+    private boolean isConfigured() {
+        return !apiKey.isBlank();
+    }
+
+    private String fallbackTherapeuticResponse(String userMessage, String context) {
+        String contextLead = context == null || context.isBlank()
+                ? ""
+                : " I’m keeping your recent diary and session context in mind as we look at this.";
+        return "It sounds like this feels heavy right now." + contextLead
+                + " What feels like the hardest part of \"" + userMessage + "\" at the moment?"
+                + " We can slow it down, look at the thought behind it, and test one small next step together.";
+    }
+
+    private List<DistortionSuggestion> heuristicDistortionSuggestions(String thought) {
+        String lowerThought = thought.toLowerCase(Locale.ROOT);
+        List<DistortionSuggestion> suggestions = new ArrayList<>();
+
+        if (lowerThought.contains("always") || lowerThought.contains("never") || lowerThought.contains("every time")) {
+            suggestions.add(new DistortionSuggestion("all-or-nothing", 0.88, "The thought uses absolute language."));
+        }
+        if (lowerThought.contains("worst") || lowerThought.contains("ruined") || lowerThought.contains("disaster")) {
+            suggestions.add(new DistortionSuggestion("catastrophizing", 0.85, "The thought jumps to the worst-case outcome."));
+        }
+        if (lowerThought.contains("they think") || lowerThought.contains("they must think") || lowerThought.contains("they hate me")) {
+            suggestions.add(new DistortionSuggestion("mind-reading", 0.82, "The thought assumes other people's judgments without direct evidence."));
+        }
+        if (lowerThought.contains("i feel") && (lowerThought.contains("so it is") || lowerThought.contains("that means it is"))) {
+            suggestions.add(new DistortionSuggestion("emotional-reasoning", 0.74, "The thought treats a feeling as proof of fact."));
+        }
+        if (lowerThought.contains("should") || lowerThought.contains("must")) {
+            suggestions.add(new DistortionSuggestion("should-statements", 0.73, "The thought includes rigid internal rules."));
+        }
+        if (lowerThought.contains("everyone") || lowerThought.contains("nobody")) {
+            suggestions.add(new DistortionSuggestion("overgeneralization", 0.7, "The thought generalizes broadly from limited evidence."));
+        }
+
+        return suggestions.stream()
+                .sorted(Comparator.comparingDouble(DistortionSuggestion::getConfidence).reversed())
+                .toList();
+    }
+
+    private List<String> fallbackReframingPrompts(String thought, List<String> distortionIds) {
+        List<String> prompts = new ArrayList<>();
+        prompts.add("What evidence supports this thought, and what evidence points in a different direction?");
+        prompts.add("If a friend said \"" + thought + "\", what balanced response would you offer them?");
+        if (distortionIds != null && !distortionIds.isEmpty()) {
+            prompts.add("How might " + String.join(", ", distortionIds) + " be shaping the way this situation feels right now?");
+        } else {
+            prompts.add("What is a more balanced way to describe this situation without ignoring the hard parts?");
+        }
+        return prompts;
+    }
+
+    private CrisisDetectionResponse buildCrisisResponse(List<String> indicators, SeverityLevel severityLevel) {
+        List<String> recommendedNextSteps = severityLevel == SeverityLevel.SIGNIFICANT
+                ? CRISIS_RESOURCES
+                : List.of(
+                        "Pause and move to a safer, quieter space if you can.",
+                        "Reach out to a trusted person and stay connected.",
+                        "Use grounding or slow breathing while deciding on your next support step.");
+        return new CrisisDetectionResponse(
+                !indicators.isEmpty(),
+                severityLevel,
+                indicators,
+                recommendedNextSteps);
+    }
+
+    private SeverityLevel mapRiskLevel(String riskLevel) {
+        return switch (riskLevel == null ? "none" : riskLevel.toLowerCase(Locale.ROOT)) {
+            case "critical", "high" -> SeverityLevel.SIGNIFICANT;
+            case "medium", "low" -> SeverityLevel.MODERATE;
+            default -> SeverityLevel.MILD;
+        };
+    }
+
+    private SeverityLevel maxSeverity(SeverityLevel left, SeverityLevel right) {
+        if (left == SeverityLevel.SIGNIFICANT || right == SeverityLevel.SIGNIFICANT) {
+            return SeverityLevel.SIGNIFICANT;
+        }
+        if (left == SeverityLevel.MODERATE || right == SeverityLevel.MODERATE) {
+            return SeverityLevel.MODERATE;
+        }
+        return SeverityLevel.MILD;
+    }
+
+    private String fallbackSessionSummary(String transcript) {
+        String firstLine = transcript.lines().findFirst().orElse("The session focused on a difficult moment.");
+        return "The session centered on " + firstLine
+                + " A helpful next CBT step is to identify the strongest automatic thought, check the evidence, and choose one manageable action before the next session.";
+    }
+
+    private String blankToNone(String value) {
+        return value == null || value.isBlank() ? "None available." : value;
+    }
+
+    private record OpenAiChatRequest(
+            String model,
+            List<OpenAiMessage> messages,
+            Double temperature) {
+    }
+
+    private record OpenAiMessage(
+            String role,
+            String content) {
+    }
+}

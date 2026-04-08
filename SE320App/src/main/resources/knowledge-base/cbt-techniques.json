@@ -1,0 +1,46 @@
+{
+  "documents": [
+    {
+      "id": "technique-thought-challenging",
+      "category": "technique",
+      "topic": "thought-challenging",
+      "content": "Thought challenging helps users examine evidence for and against a thought, notice distortions, and build a more balanced alternative."
+    },
+    {
+      "id": "technique-behavioral-activation",
+      "category": "technique",
+      "topic": "behavioral-activation",
+      "content": "Behavioral activation uses small, meaningful actions to rebuild momentum, energy, and reward, especially during burnout or low mood."
+    },
+    {
+      "id": "technique-exposure",
+      "category": "technique",
+      "topic": "exposure",
+      "content": "Exposure techniques support gradual and planned contact with avoided situations so fear can decrease over time with practice."
+    },
+    {
+      "id": "technique-relaxation",
+      "category": "technique",
+      "topic": "relaxation-mindfulness",
+      "content": "Relaxation and mindfulness techniques can reduce physiological stress and create enough calm to think more flexibly."
+    },
+    {
+      "id": "technique-problem-solving",
+      "category": "technique",
+      "topic": "problem-solving",
+      "content": "Problem-solving therapy breaks overwhelming problems into concrete steps, options, tradeoffs, and one realistic next action."
+    },
+    {
+      "id": "burnout-maslach",
+      "category": "burnout",
+      "topic": "maslach",
+      "content": "Burnout often includes emotional exhaustion, depersonalization or cynicism, and reduced personal accomplishment. Recovery work often targets rest, values, boundaries, and sustainable workload changes."
+    },
+    {
+      "id": "burnout-boundaries",
+      "category": "burnout",
+      "topic": "boundaries",
+      "content": "Boundary setting for burnout may include workload limits, communication norms, recovery time, and reducing perfectionistic over-functioning."
+    }
+  ]
+}

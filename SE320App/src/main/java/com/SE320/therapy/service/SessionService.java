@@ -19,6 +19,7 @@ import com.SE320.therapy.objects.InteractionModality;
 import com.SE320.therapy.objects.UserSessionStatus;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
@@ -42,9 +43,23 @@ public class SessionService {
     private final UserRepository userRepository;
     private final UserSessionRepository userSessionRepository;
     private final ChatMessageRepository chatMessageRepository;
+    private final AiService aiService;
+
+    private final List<String> sessionLibrary = List.of(
+            "Thought Record",
+            "Behavioral Activation",
+            "Cognitive Restructuring");
+
+    public SessionService() {
+        this.chatMessageRepository = null;
+        this.userRepository = null;
+        this.sessionRepository = null;
+        this.userSessionRepository = null;
+        this.aiService = null;
+    }
 
     public SessionService(SessionRepository sessionRepository) {
-        this(sessionRepository, null, null, null);
+        this(sessionRepository, null, null, null, null);
     }
 
     public SessionService(
@@ -53,10 +68,22 @@ public class SessionService {
         UserSessionRepository userSessionRepository,
         ChatMessageRepository chatMessageRepository
     ) {
+        this(sessionRepository, userRepository, userSessionRepository, chatMessageRepository, null);
+    }
+
+    @Autowired
+    public SessionService(
+        SessionRepository sessionRepository,
+        UserRepository userRepository,
+        UserSessionRepository userSessionRepository,
+        ChatMessageRepository chatMessageRepository,
+        AiService aiService
+    ) {
         this.sessionRepository = sessionRepository;
         this.userRepository = userRepository;
         this.userSessionRepository = userSessionRepository;
         this.chatMessageRepository = chatMessageRepository;
+        this.aiService = aiService;
     }
 
     @Transactional(readOnly = true)
@@ -122,7 +149,7 @@ public class SessionService {
         ChatMessage assistantMessage = new ChatMessage();
         assistantMessage.setUserSession(userSession);
         assistantMessage.setRole(ChatRole.ASSISTANT);
-        assistantMessage.setContent(buildAssistantReply(userSession.getCbtSession(), request.message().trim()));
+        assistantMessage.setContent(buildAssistantReply(userSession, request.message().trim()));
         assistantMessage.setModality(modality);
         assistantMessage = chatMessageRepository.save(assistantMessage);
 
@@ -140,6 +167,19 @@ public class SessionService {
     public SessionRunResponse endSession(Long sessionId, EndSessionRequest request) {
         log.info("Ending user session for userId={} sessionId={}", request.userId(), sessionId);
         UserSession userSession = getActiveSession(request.userId(), sessionId);
+
+        if (aiService != null) {
+            String summary = aiService.summarizeSession(userSession.getId());
+            if (summary != null && !summary.isBlank()) {
+                ChatMessage summaryMessage = new ChatMessage();
+                summaryMessage.setUserSession(userSession);
+                summaryMessage.setRole(ChatRole.ASSISTANT);
+                summaryMessage.setContent(summary.trim());
+                summaryMessage.setModality(InteractionModality.TEXT);
+                chatMessageRepository.save(summaryMessage);
+            }
+        }
+
         userSession.setStatus(UserSessionStatus.COMPLETED);
         userSession.setEndedAt(LocalDateTime.now());
         userSession.setMoodAfter(request.moodAfter());
@@ -247,8 +287,13 @@ public class SessionService {
         );
     }
 
-    private String buildAssistantReply(CBTSession session, String message) {
-        String sessionTitle = session.getTitle() == null ? "this session" : session.getTitle();
+    private String buildAssistantReply(UserSession userSession, String message) {
+        if (aiService != null && userSession != null && userSession.getId() != null) {
+            return aiService.generateResponse(userSession.getId(), message);
+        }
+
+        CBTSession session = userSession == null ? null : userSession.getCbtSession();
+        String sessionTitle = session == null || session.getTitle() == null ? "this session" : session.getTitle();
         return "Let's use " + sessionTitle + " to explore that. What evidence supports or challenges: \"" + message + "\"?";
     }
 }

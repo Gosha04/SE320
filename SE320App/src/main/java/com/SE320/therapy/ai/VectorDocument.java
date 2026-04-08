@@ -4,6 +4,9 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class VectorDocument {
 
     private final String id;
@@ -11,7 +14,12 @@ public class VectorDocument {
     private final Map<String, String> metadata;
     private final double[] embedding;
 
-    public VectorDocument(String id, String content, Map<String, String> metadata, double[] embedding) {
+    @JsonCreator
+    public VectorDocument(
+            @JsonProperty("id") String id,
+            @JsonProperty("content") String content,
+            @JsonProperty("metadata") Map<String, String> metadata,
+            @JsonProperty("embedding") double[] embedding) {
         this.id = id;
         this.content = content;
         this.metadata = metadata == null
