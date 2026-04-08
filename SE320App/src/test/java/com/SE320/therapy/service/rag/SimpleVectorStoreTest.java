@@ -1,4 +1,4 @@
-package com.SE320.therapy.ai;
+package com.SE320.therapy.service.rag;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

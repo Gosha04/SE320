@@ -15,7 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.client.RestClient;
 
-import com.SE320.therapy.ai.RagContextBuilder;
+import com.SE320.therapy.service.rag.RagContextBuilder;
 import com.SE320.therapy.dto.CrisisDetectionResponse;
 import com.SE320.therapy.dto.DistortionSuggestion;
 import com.SE320.therapy.entity.CognitiveDistortion;
