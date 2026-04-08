@@ -1,0 +1,64 @@
+{
+  "documents": [
+    {
+      "id": "distortion-all-or-nothing",
+      "category": "distortion",
+      "topic": "all-or-nothing",
+      "content": "All-or-nothing thinking treats experiences as total success or total failure. A CBT response looks for middle ground, exceptions, and evidence against absolutes."
+    },
+    {
+      "id": "distortion-overgeneralization",
+      "category": "distortion",
+      "topic": "overgeneralization",
+      "content": "Overgeneralization draws broad conclusions from a single setback. CBT encourages separating one event from a permanent pattern."
+    },
+    {
+      "id": "distortion-mental-filtering",
+      "category": "distortion",
+      "topic": "mental-filtering",
+      "content": "Mental filtering focuses only on negative details while ignoring neutral or positive information in the same situation."
+    },
+    {
+      "id": "distortion-catastrophizing",
+      "category": "distortion",
+      "topic": "catastrophizing",
+      "content": "Catastrophizing assumes the worst outcome is likely or unbearable. CBT slows this down by estimating realistic outcomes and coping ability."
+    },
+    {
+      "id": "distortion-mind-reading",
+      "category": "distortion",
+      "topic": "mind-reading",
+      "content": "Mind reading assumes you know what other people think without enough evidence. CBT uses curiosity, alternative explanations, and evidence checks."
+    },
+    {
+      "id": "distortion-fortune-telling",
+      "category": "distortion",
+      "topic": "fortune-telling",
+      "content": "Fortune telling predicts negative outcomes as facts. CBT asks what evidence supports the prediction and what other outcomes are possible."
+    },
+    {
+      "id": "distortion-emotional-reasoning",
+      "category": "distortion",
+      "topic": "emotional-reasoning",
+      "content": "Emotional reasoning treats feelings as proof. A CBT response validates the feeling while separating it from objective fact."
+    },
+    {
+      "id": "distortion-should-statements",
+      "category": "distortion",
+      "topic": "should-statements",
+      "content": "Should statements use rigid internal rules that often increase shame, frustration, or resentment. CBT reframes these rules into preferences and realistic goals."
+    },
+    {
+      "id": "distortion-labeling",
+      "category": "distortion",
+      "topic": "labeling",
+      "content": "Labeling turns a specific mistake into a global identity judgment, such as calling yourself incompetent instead of naming a single error."
+    },
+    {
+      "id": "distortion-personalization",
+      "category": "distortion",
+      "topic": "personalization",
+      "content": "Personalization takes excessive responsibility for events that are influenced by many factors outside one person's control."
+    }
+  ]
+}

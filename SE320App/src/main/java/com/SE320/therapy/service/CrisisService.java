@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.SE320.therapy.dto.CrisisDetectionRequest;
@@ -21,11 +22,18 @@ public class CrisisService {
 
     private final UserRepository userRepository;
     private final SafetyPlanRepository safetyPlanRepository;
+    private final AiService aiService;
     private final Crisis crisis;
 
     public CrisisService(UserRepository userRepository, SafetyPlanRepository safetyPlanRepository) {
+        this(userRepository, safetyPlanRepository, null);
+    }
+
+    @Autowired
+    public CrisisService(UserRepository userRepository, SafetyPlanRepository safetyPlanRepository, AiService aiService) {
         this.userRepository = userRepository;
         this.safetyPlanRepository = safetyPlanRepository;
+        this.aiService = aiService;
         this.crisis = buildDefaultCrisis();
     }
 
@@ -96,6 +104,26 @@ public class CrisisService {
     public CrisisDetectionResponse detectCrisisIndicators(CrisisDetectionRequest request) {
         System.out.println("[CrisisService] Detecting crisis indicators...");
         validateDetectionRequest(request);
+
+        if (aiService != null && request.getMessage() != null && !request.getMessage().isBlank()) {
+            CrisisDetectionResponse response = aiService.detectCrisis(request.getMessage());
+            if (request.getObservedIndicators() == null || request.getObservedIndicators().isEmpty()) {
+                return response;
+            }
+
+            List<String> mergedIndicators = new ArrayList<>(response.matchedIndicators());
+            for (String indicator : request.getObservedIndicators()) {
+                if (indicator != null && !indicator.isBlank() && !mergedIndicators.contains(indicator.trim())) {
+                    mergedIndicators.add(indicator.trim());
+                }
+            }
+
+            return new CrisisDetectionResponse(
+                    !mergedIndicators.isEmpty(),
+                    response.severityLevel(),
+                    mergedIndicators,
+                    response.recommendedNextSteps());
+        }
 
         String message = request.getMessage() == null
                 ? ""

@@ -40,6 +40,10 @@ public class DiaryCommands implements Command {
 
         while (running) {
             System.out.print("Diary command: ");
+            if (!scanner.hasNextLine()) {
+                System.out.println();
+                return;
+            }
             String choice = scanner.nextLine().trim().toLowerCase(Locale.ROOT);
 
             switch (choice) {
@@ -73,9 +77,17 @@ public class DiaryCommands implements Command {
 
         try {
             System.out.print("Situation: ");
+            if (!scanner.hasNextLine()) {
+                System.out.println();
+                return;
+            }
             String situation = scanner.nextLine();
 
             System.out.print("Automatic thought: ");
+            if (!scanner.hasNextLine()) {
+                System.out.println();
+                return;
+            }
             String automaticThought = scanner.nextLine();
 
             List<DistortionSuggestion> suggestions =
@@ -90,6 +102,10 @@ public class DiaryCommands implements Command {
             }
 
             System.out.print("Alternative thought: ");
+            if (!scanner.hasNextLine()) {
+                System.out.println();
+                return;
+            }
             String alternativeThought = scanner.nextLine();
 
             int moodBefore = readMood("Mood before (1-10): ");
@@ -135,6 +151,10 @@ public class DiaryCommands implements Command {
 
         while (true) {
             System.out.print("\nEnter an entry number to view full details, or press Enter to go back: ");
+            if (!scanner.hasNextLine()) {
+                System.out.println();
+                return;
+            }
             String input = scanner.nextLine().trim();
 
             if (input.isEmpty()) {
@@ -186,6 +206,10 @@ public class DiaryCommands implements Command {
     private int readMood(String prompt) {
         while (true) {
             System.out.print(prompt);
+            if (!scanner.hasNextLine()) {
+                System.out.println();
+                throw new IllegalArgumentException("Input ended before a mood value was provided.");
+            }
             String input = scanner.nextLine();
 
             try {

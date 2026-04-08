@@ -1,5 +1,8 @@
 package com.SE320.therapy.ai;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -8,9 +11,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @Component
 public class SimpleVectorStore implements VectorStore {
 
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final List<VectorDocument> documents = new CopyOnWriteArrayList<>();
 
     @Override
@@ -40,6 +47,30 @@ public class SimpleVectorStore implements VectorStore {
     @Override
     public long size() {
         return documents.size();
+    }
+
+    @Override
+    public void clear() {
+        documents.clear();
+    }
+
+    public void save(Path path) throws IOException {
+        if (path.getParent() != null) {
+            Files.createDirectories(path.getParent());
+        }
+        objectMapper.writerWithDefaultPrettyPrinter().writeValue(path.toFile(), documents);
+    }
+
+    public void load(Path path) throws IOException {
+        if (!Files.exists(path) || Files.size(path) == 0L) {
+            return;
+        }
+        List<VectorDocument> loadedDocuments = objectMapper.readValue(
+                path.toFile(),
+                new TypeReference<List<VectorDocument>>() {
+                });
+        documents.clear();
+        documents.addAll(loadedDocuments);
     }
 
     private double cosineSimilarity(double[] left, double[] right) {
