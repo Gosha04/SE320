@@ -61,9 +61,9 @@ class DiaryControllerApiTest {
                       "moodAfter": 11
                     }
                     """))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
-            .andExpect(jsonPath("$.error.message").value("Invalid input provided"))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.error.code").value("UNPROCESSABLE_ENTITY"))
+            .andExpect(jsonPath("$.error.message").value("Validation failed"))
             .andExpect(jsonPath("$.error.details.length()").value(5));
     }
 
@@ -81,7 +81,7 @@ class DiaryControllerApiTest {
                     }
                     """))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
+            .andExpect(jsonPath("$.error.code").value("INVALID_REQUEST"))
             .andExpect(jsonPath("$.error.details[0].field").value("userId"));
     }
 
@@ -134,8 +134,8 @@ class DiaryControllerApiTest {
                       "thought": "   "
                     }
                     """))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.error.code").value("VALIDATION_ERROR"))
+            .andExpect(status().isUnprocessableEntity())
+            .andExpect(jsonPath("$.error.code").value("UNPROCESSABLE_ENTITY"))
             .andExpect(jsonPath("$.error.details[0].field").value("thought"));
     }
 

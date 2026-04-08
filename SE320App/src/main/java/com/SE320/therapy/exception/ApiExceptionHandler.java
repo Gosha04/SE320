@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -41,8 +43,8 @@ public class ApiExceptionHandler {
             .map(this::toDetail)
             .toList();
 
-        logHandledException(request, HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", ex);
-        return build(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Invalid input provided", details);
+        logHandledException(request, HttpStatus.UNPROCESSABLE_ENTITY, "UNPROCESSABLE_ENTITY", ex);
+        return build(HttpStatus.UNPROCESSABLE_ENTITY, "UNPROCESSABLE_ENTITY", "Validation failed", details);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -55,8 +57,8 @@ public class ApiExceptionHandler {
             ))
             .toList();
 
-        logHandledException(request, HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", ex);
-        return build(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Invalid input provided", details);
+        logHandledException(request, HttpStatus.UNPROCESSABLE_ENTITY, "UNPROCESSABLE_ENTITY", ex);
+        return build(HttpStatus.UNPROCESSABLE_ENTITY, "UNPROCESSABLE_ENTITY", "Validation failed", details);
     }
 
     @ExceptionHandler({ IllegalArgumentException.class, MethodArgumentTypeMismatchException.class })
@@ -73,11 +75,11 @@ public class ApiExceptionHandler {
         MissingServletRequestParameterException ex,
         HttpServletRequest request
     ) {
-        logHandledException(request, HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", ex);
+        logHandledException(request, HttpStatus.BAD_REQUEST, "INVALID_REQUEST", ex);
         return build(
             HttpStatus.BAD_REQUEST,
-            "VALIDATION_ERROR",
-            "Invalid input provided",
+            "INVALID_REQUEST",
+            "Missing required request parameter",
             List.of(new ApiErrorDetail(ex.getParameterName(), "is required"))
         );
     }
@@ -87,12 +89,35 @@ public class ApiExceptionHandler {
         HttpMessageNotReadableException ex,
         HttpServletRequest request
     ) {
-        logHandledException(request, HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", ex);
+        logHandledException(request, HttpStatus.BAD_REQUEST, "INVALID_REQUEST", ex);
         return build(
             HttpStatus.BAD_REQUEST,
-            "VALIDATION_ERROR",
-            "Invalid input provided",
+            "INVALID_REQUEST",
+            "Request body is missing or malformed",
             List.of(new ApiErrorDetail(null, "Request body is missing or malformed"))
+        );
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiErrorEnvelope> handleAuthenticationException(
+        AuthenticationException ex,
+        HttpServletRequest request
+    ) {
+        logHandledException(request, HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", ex);
+        return build(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED", "Authentication is required", List.of());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiErrorEnvelope> handleAccessDeniedException(
+        AccessDeniedException ex,
+        HttpServletRequest request
+    ) {
+        logHandledException(request, HttpStatus.FORBIDDEN, "FORBIDDEN", ex);
+        return build(
+            HttpStatus.FORBIDDEN,
+            "FORBIDDEN",
+            "You do not have permission to access this resource.",
+            List.of(new ApiErrorDetail("authorization", "Access is denied"))
         );
     }
 
@@ -168,6 +193,7 @@ public class ApiExceptionHandler {
             case FORBIDDEN -> "FORBIDDEN";
             case NOT_FOUND -> "NOT_FOUND";
             case CONFLICT -> "CONFLICT";
+            case UNPROCESSABLE_ENTITY -> "UNPROCESSABLE_ENTITY";
             default -> status.is4xxClientError() ? "CLIENT_ERROR" : "INTERNAL_SERVER_ERROR";
         };
     }
