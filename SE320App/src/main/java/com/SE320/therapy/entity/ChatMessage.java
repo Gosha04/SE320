@@ -6,8 +6,8 @@ import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import com.SE320.therapy.objects.ChatRole;
-import com.SE320.therapy.objects.InteractionModality;
+import com.SE320.therapy.dto.objects.ChatRole;
+import com.SE320.therapy.dto.objects.InteractionModality;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

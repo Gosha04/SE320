@@ -7,8 +7,9 @@ import com.SE320.therapy.dto.SendChatMessageRequest;
 import com.SE320.therapy.dto.SessionChatResponse;
 import com.SE320.therapy.dto.SessionLibraryItemResponse;
 import com.SE320.therapy.dto.SessionRunResponse;
+import com.SE320.therapy.dto.objects.SessionStatus;
 import com.SE320.therapy.entity.CBTSession;
-import com.SE320.therapy.objects.SessionStatus;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

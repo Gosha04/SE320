@@ -20,10 +20,10 @@ import org.springframework.validation.annotation.Validated;
 
 import com.SE320.therapy.dto.AchievementRequest;
 import com.SE320.therapy.dto.AchievementResponse;
-import com.SE320.therapy.objects.BurnoutRecovery;
-import com.SE320.therapy.objects.Dashboard;
-import com.SE320.therapy.objects.MonthlyTrends;
-import com.SE320.therapy.objects.WeeklyProgress;
+import com.SE320.therapy.dto.objects.BurnoutRecovery;
+import com.SE320.therapy.dto.objects.Dashboard;
+import com.SE320.therapy.dto.objects.MonthlyTrends;
+import com.SE320.therapy.dto.objects.WeeklyProgress;
 import com.SE320.therapy.service.DashboardService;
 
 import jakarta.validation.Valid;

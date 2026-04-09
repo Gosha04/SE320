@@ -9,8 +9,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.SE320.therapy.dto.objects.UserSessionStatus;
 import com.SE320.therapy.entity.UserSession;
-import com.SE320.therapy.objects.UserSessionStatus;
 
 @Repository
 public interface UserSessionRepository extends JpaRepository<UserSession, UUID> {

@@ -8,7 +8,7 @@ import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import com.SE320.therapy.objects.UserSessionStatus;
+import com.SE320.therapy.dto.objects.UserSessionStatus;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

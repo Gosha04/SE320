@@ -16,10 +16,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
+import com.SE320.therapy.dto.objects.SessionModality;
 import com.SE320.therapy.entity.CBTSession;
 import com.SE320.therapy.entity.SessionModule;
 import com.SE320.therapy.exception.ApiExceptionHandler;
-import com.SE320.therapy.objects.SessionModality;
 import com.SE320.therapy.repository.ChatMessageRepository;
 import com.SE320.therapy.repository.SessionRepository;
 import com.SE320.therapy.repository.UserRepository;

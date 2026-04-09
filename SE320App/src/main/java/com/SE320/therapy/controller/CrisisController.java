@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.SE320.therapy.dto.CrisisDetectionRequest;
 import com.SE320.therapy.dto.CrisisDetectionResponse;
-import com.SE320.therapy.objects.Crisis;
+import com.SE320.therapy.dto.objects.Crisis;
 import com.SE320.therapy.service.CrisisService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;

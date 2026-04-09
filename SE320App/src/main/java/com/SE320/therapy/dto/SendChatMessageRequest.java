@@ -2,7 +2,7 @@ package com.SE320.therapy.dto;
 
 import java.util.UUID;
 
-import com.SE320.therapy.objects.InteractionModality;
+import com.SE320.therapy.dto.objects.InteractionModality;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
