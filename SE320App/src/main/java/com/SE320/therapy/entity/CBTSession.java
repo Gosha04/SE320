@@ -16,13 +16,13 @@ import jakarta.persistence.Table;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import com.SE320.therapy.dto.objects.SessionModality;
+import com.SE320.therapy.dto.objects.SessionStatus;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
-import com.SE320.therapy.objects.SessionModality;
-import com.SE320.therapy.objects.SessionStatus;
 
 @Entity
 @Table(name = "cbt_sessions")

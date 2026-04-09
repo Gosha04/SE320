@@ -12,7 +12,7 @@ import com.SE320.therapy.dto.DeleteRequest;
 import com.SE320.therapy.dto.LoginRequest;
 import com.SE320.therapy.dto.RegisterRequest;
 import com.SE320.therapy.dto.UserResponse;
-import com.SE320.therapy.objects.UserType;
+import com.SE320.therapy.dto.objects.UserType;
 import com.SE320.therapy.service.AuthResponse;
 
 @Component

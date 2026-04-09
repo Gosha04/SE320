@@ -14,11 +14,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.SE320.therapy.dto.EndSessionRequest;
+import com.SE320.therapy.dto.objects.UserSessionStatus;
 import com.SE320.therapy.entity.CBTSession;
 import com.SE320.therapy.entity.ChatMessage;
 import com.SE320.therapy.entity.User;
 import com.SE320.therapy.entity.UserSession;
-import com.SE320.therapy.objects.UserSessionStatus;
 import com.SE320.therapy.repository.ChatMessageRepository;
 import com.SE320.therapy.repository.SessionRepository;
 import com.SE320.therapy.repository.UserRepository;

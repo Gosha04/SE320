@@ -9,14 +9,14 @@ import com.SE320.therapy.dto.SessionDetailResponse;
 import com.SE320.therapy.dto.SessionLibraryItemResponse;
 import com.SE320.therapy.dto.SessionRunResponse;
 import com.SE320.therapy.dto.StartSessionRequest;
+import com.SE320.therapy.dto.objects.ChatRole;
+import com.SE320.therapy.dto.objects.InteractionModality;
+import com.SE320.therapy.dto.objects.UserSessionStatus;
 import com.SE320.therapy.entity.CBTSession;
 import com.SE320.therapy.entity.ChatMessage;
 import com.SE320.therapy.entity.User;
 import com.SE320.therapy.entity.UserSession;
 import com.SE320.therapy.exception.ApiException;
-import com.SE320.therapy.objects.ChatRole;
-import com.SE320.therapy.objects.InteractionModality;
-import com.SE320.therapy.objects.UserSessionStatus;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -12,14 +12,14 @@ import org.springframework.web.server.ResponseStatusException;
 import com.SE320.therapy.controller.DashboardController;
 import com.SE320.therapy.dto.AchievementRequest;
 import com.SE320.therapy.dto.AchievementResponse;
+import com.SE320.therapy.dto.objects.BurnoutRecovery;
+import com.SE320.therapy.dto.objects.Dashboard;
+import com.SE320.therapy.dto.objects.MaslachBurnoutInventoryDimensions;
+import com.SE320.therapy.dto.objects.MonthlyTrends;
+import com.SE320.therapy.dto.objects.ProgressPoint;
+import com.SE320.therapy.dto.objects.UserType;
+import com.SE320.therapy.dto.objects.WeeklyProgress;
 import com.SE320.therapy.entity.Achievement;
-import com.SE320.therapy.objects.BurnoutRecovery;
-import com.SE320.therapy.objects.Dashboard;
-import com.SE320.therapy.objects.MaslachBurnoutInventoryDimensions;
-import com.SE320.therapy.objects.MonthlyTrends;
-import com.SE320.therapy.objects.ProgressPoint;
-import com.SE320.therapy.objects.UserType;
-import com.SE320.therapy.objects.WeeklyProgress;
 
 @Component
 public class DashboardCommands implements Command {

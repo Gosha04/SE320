@@ -8,9 +8,9 @@ import java.util.UUID;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import com.SE320.therapy.objects.OnboardingPath;
-import com.SE320.therapy.objects.SeverityLevel;
-import com.SE320.therapy.objects.UserType;
+import com.SE320.therapy.dto.objects.OnboardingPath;
+import com.SE320.therapy.dto.objects.SeverityLevel;
+import com.SE320.therapy.dto.objects.UserType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

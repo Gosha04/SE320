@@ -13,14 +13,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
+import com.SE320.therapy.dto.objects.ChatRole;
+import com.SE320.therapy.dto.objects.InteractionModality;
+import com.SE320.therapy.dto.objects.UserSessionStatus;
 import com.SE320.therapy.entity.CBTSession;
 import com.SE320.therapy.entity.ChatMessage;
 import com.SE320.therapy.entity.DiaryEntry;
 import com.SE320.therapy.entity.User;
 import com.SE320.therapy.entity.UserSession;
-import com.SE320.therapy.objects.ChatRole;
-import com.SE320.therapy.objects.InteractionModality;
-import com.SE320.therapy.objects.UserSessionStatus;
 import com.SE320.therapy.repository.ChatMessageRepository;
 import com.SE320.therapy.repository.DiaryEntryRepository;
 import com.SE320.therapy.repository.UserSessionRepository;

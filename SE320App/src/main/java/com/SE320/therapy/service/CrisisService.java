@@ -10,10 +10,10 @@ import org.springframework.stereotype.Service;
 
 import com.SE320.therapy.dto.CrisisDetectionRequest;
 import com.SE320.therapy.dto.CrisisDetectionResponse;
+import com.SE320.therapy.dto.objects.Crisis;
+import com.SE320.therapy.dto.objects.SeverityLevel;
 import com.SE320.therapy.entity.SafetyPlan;
 import com.SE320.therapy.entity.User;
-import com.SE320.therapy.objects.Crisis;
-import com.SE320.therapy.objects.SeverityLevel;
 import com.SE320.therapy.repository.SafetyPlanRepository;
 import com.SE320.therapy.repository.UserRepository;
 

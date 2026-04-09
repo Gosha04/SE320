@@ -27,8 +27,8 @@ import org.springframework.web.server.ResponseStatusException;
 import com.SE320.therapy.dto.LoginRequest;
 import com.SE320.therapy.dto.RegisterRequest;
 import com.SE320.therapy.dto.UserResponse;
+import com.SE320.therapy.dto.objects.UserType;
 import com.SE320.therapy.entity.User;
-import com.SE320.therapy.objects.UserType;
 import com.SE320.therapy.repository.UserRepository;
 import com.SE320.therapy.security.JwtService;
 

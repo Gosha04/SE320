@@ -1,4 +1,4 @@
-package com.SE320.therapy.objects;
+package com.SE320.therapy.dto.objects;
 
 public enum OnboardingPath {
     SELF,

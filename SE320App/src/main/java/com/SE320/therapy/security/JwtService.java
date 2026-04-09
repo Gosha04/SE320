@@ -14,8 +14,8 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.SE320.therapy.dto.objects.UserType;
 import com.SE320.therapy.entity.User;
-import com.SE320.therapy.objects.UserType;
 import com.SE320.therapy.service.AuthenticatedUser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
