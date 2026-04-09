@@ -1,0 +1,53 @@
+@startuml c4-container
+title Digital Therapy Assistant - C4 Level 2 Container Diagram
+
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam packageStyle rectangle
+skinparam wrapWidth 220
+skinparam maxMessageSize 220
+skinparam rectangle {
+  RoundCorner 12
+  BorderColor #2F4858
+}
+
+rectangle "Patients / Therapists / Administrators\n<<Users>>" as users #F6D55C
+
+rectangle "Digital Therapy Assistant" as boundary #EBF5FB {
+  rectangle "CLI Application (Java)\n<<Container>>\n`com.SE320.therapy.cli.commands`\nInteractive menu-driven interface running\ninside the Spring Boot process" as cli #AED6F1
+
+  rectangle "Spring Boot Application\n<<Container>>\nREST controllers, services, security,\nrepositories, DTOs, and orchestration logic" as app #5DADE2
+
+  database "MySQL Database\n<<Container>>\nRelational persistence for users, sessions,\nchat messages, diary entries, achievements,\nand safety plans" as db #A9DFBF
+
+  rectangle "SimpleVector Store\n<<Container>>\nJSON-backed vector store at `data/vector-store.json`\nfor similarity search used by RAG" as vector #A9DFBF
+
+  folder "Knowledge Base\n<<Container>>\nJSON CBT reference documents in\n`src/main/resources/knowledge-base/`" as kb #FCF3CF
+}
+
+rectangle "LLM Provider\n<<External System>>\nOpenAI-compatible API" as llm #D6EAF8
+rectangle "Email Service\n<<External System>>" as email #D6EAF8
+rectangle "Healthcare EHR Systems\n<<External System>>" as ehr #D6EAF8
+
+users --> cli : Uses menu commands
+users --> app : Uses REST API endpoints
+cli --> app : Invokes controllers and services in-process
+app --> db : Reads and writes application data
+app --> vector : Queries and persists vector embeddings
+app --> kb : Loads CBT content and crisis guidance
+app --> llm : Sends prompt requests and receives AI completions
+app --> email : Sends notifications
+app --> ehr : Exports treatment data via FHIR
+vector --> kb : Stores embeddings derived from\nknowledge base documents
+
+legend right
+|= Notation |= Meaning |
+| <back:#AED6F1>Application Container</back> | Executable or deployable application unit |
+| <back:#5DADE2>Main Application</back> | Primary backend runtime |
+| <back:#A9DFBF>Data Store</back> | Persistent storage container |
+| <back:#FCF3CF>Knowledge Source</back> | Reference content used for RAG |
+| <back:#D6EAF8>External System</back> | Third-party or external dependency |
+endlegend
+
+@enduml
