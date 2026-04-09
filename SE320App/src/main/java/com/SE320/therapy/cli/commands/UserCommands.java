@@ -72,7 +72,7 @@ public class UserCommands implements Command {
         System.out.println("logout");
         System.out.println("delete (account)");
         System.out.println("session (information)");
-        System.out.println("exit\n\n");
+        System.out.println("back\n\n");
     }
 
     private void handleRegister() {
