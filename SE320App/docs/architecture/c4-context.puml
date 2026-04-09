@@ -1,0 +1,45 @@
+@startuml c4-context
+title Digital Therapy Assistant - C4 Level 1 System Context
+
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam packageStyle rectangle
+skinparam wrapWidth 220
+skinparam maxMessageSize 200
+skinparam rectangle {
+  RoundCorner 12
+  BorderColor #2F4858
+}
+skinparam person {
+  BorderColor #2F4858
+  BackgroundColor #F6D55C
+}
+
+rectangle "Patients\n<<Person>>\nPrimary users seeking burnout recovery,\nCBT guidance, journaling, and crisis support" as patient #F6D55C
+rectangle "Therapists / Doctors\n<<Person>>\nReview progress and support patient care" as therapist #F6D55C
+rectangle "System Administrators\n<<Person>>\nManage platform operation and access" as admin #F6D55C
+
+rectangle "Digital Therapy Assistant\n<<Software System>>\nSpring Boot and CLI-based digital therapy platform\nfor CBT workflows, diary entries, session chat,\nprogress tracking, and crisis support" as dta #5DADE2
+
+rectangle "LLM Provider\n<<External System>>\nOpenAI-compatible large language model service\nfor therapeutic response generation and analysis" as llm #D6EAF8
+rectangle "Email Service\n<<External System>>\nNotification and reminder delivery" as email #D6EAF8
+rectangle "Healthcare EHR Systems\n<<External System>>\nFHIR-based export target for clinical interoperability" as ehr #D6EAF8
+
+patient -down-> dta : Uses CLI and API features for sessions,\ndiaries, insights, and crisis help
+therapist -down-> dta : Reviews progress and supports patient workflows
+admin -down-> dta : Maintains users, security, and platform settings
+
+dta -right-> llm : Sends prompts and receives AI responses,\ndistortion analysis, reframing prompts,\nand crisis assessment
+dta -right-> email : Sends reminders and notifications
+dta -right-> ehr : Exports progress or treatment data via FHIR
+
+legend right
+|= Notation |= Meaning |
+| <back:#F6D55C>Person</back> | Human user or actor |
+| <back:#5DADE2>Software System</back> | System being modeled |
+| <back:#D6EAF8>External System</back> | External dependency or integration point |
+| Solid arrow | Relationship with labeled interaction |
+endlegend
+
+@enduml

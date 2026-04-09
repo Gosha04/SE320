@@ -1,0 +1,169 @@
+@startuml c4-code
+title Digital Therapy Assistant - Code-Level Architecture
+
+top to bottom direction
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam classAttributeIconSize 0
+skinparam wrapWidth 220
+skinparam linetype ortho
+skinparam nodesep 70
+skinparam ranksep 90
+skinparam packageStyle rectangle
+skinparam rectangle {
+  RoundCorner 10
+  BorderColor #2F4858
+}
+
+package "A. AI Service Class View" #EAF2F8 {
+  interface AiService {
+    +generateResponse(sessionId: UUID, userMessage: String): String
+    +analyzeThought(automaticThought: String): List<DistortionSuggestion>
+    +generateReframingPrompts(thought: String, distortionIds: List<String>): List<String>
+    +detectCrisis(text: String): CrisisDetectionResponse
+  }
+
+  class OpenAiService {
+    -ragContextBuilder: RagContextBuilder
+    +generateResponse(sessionId: UUID, userMessage: String): String
+    +analyzeThought(automaticThought: String): List<DistortionSuggestion>
+    +generateReframingPrompts(thought: String, distortionIds: List<String>): List<String>
+    +detectCrisis(text: String): CrisisDetectionResponse
+  }
+
+  class RagContextBuilder {
+    +buildContext(userId: UUID, sessionId: UUID, query: String): String
+  }
+
+  interface VectorStore {
+    +similaritySearch(queryEmbedding: double[], limit: int): List<VectorMatch>
+  }
+
+  class SimpleVectorStore {
+    +similaritySearch(queryEmbedding: double[], limit: int): List<VectorMatch>
+    +save(path: Path): void
+  }
+
+  interface EmbeddingService {
+    +embed(text: String): double[]
+  }
+
+  class HashingEmbeddingService {
+    +embed(text: String): double[]
+  }
+
+  class CrisisDetector {
+    +detectCrisis(text: String): CrisisDetectionResponse
+  }
+
+  class LlmClient {
+    +chatCompletion(prompt: String): String
+  }
+  class UserSessionRepository
+  class DiaryEntryRepository
+  class ChatMessageRepository
+  class CognitiveDistortionRepository
+
+  AiService <|.. OpenAiService
+  VectorStore <|.. SimpleVectorStore
+  EmbeddingService <|.. HashingEmbeddingService
+
+  OpenAiService --> RagContextBuilder : builds RAG context
+  OpenAiService --> LlmClient : calls LLM API
+  OpenAiService --> UserSessionRepository : reads sessions
+  OpenAiService --> DiaryEntryRepository : reads diary data
+  OpenAiService --> ChatMessageRepository : reads transcript
+  OpenAiService --> CognitiveDistortionRepository : validates distortion IDs
+  OpenAiService ..> CrisisDetector : performs crisis analysis
+
+  RagContextBuilder --> VectorStore : similarity search
+  RagContextBuilder --> EmbeddingService : embedding
+  RagContextBuilder --> UserSessionRepository : reads prior sessions
+  RagContextBuilder --> DiaryEntryRepository : reads diary patterns
+  RagContextBuilder --> ChatMessageRepository : reads current transcript
+
+  note right of CrisisDetector
+    Implemented inside
+    OpenAiService.detectCrisis(...)
+    using Spring RestClient and
+    CrisisService-supported logic.
+  end note
+}
+
+package "B. Chat Message Flow" #E8F8F5 {
+  class "User" as chatUser <<Actor>> #FCF3CF
+  class "CLI Menu /\nSessionCommands" as chatCli <<Boundary>> #D6EAF8
+  class "SessionController" as chatController <<Boundary>> #D6EAF8
+  class "SessionService" as chatService <<Control>> #D6EAF8
+  class "UserSessionRepository" as chatUserSessionRepo <<Repository>> #F4ECF7
+  class "ChatMessageRepository" as chatMessageRepo <<Repository>> #F4ECF7
+  class "OpenAiService" as chatAi <<Control>> #D5F5E3
+  class "RagContextBuilder" as chatRag <<Control>> #D5F5E3
+  class "SimpleVectorStore" as chatVector <<Repository>> #D5F5E3
+  class "LlmClient / LLM Provider" as chatLlm <<External>> #FCF3CF
+
+  left to right direction
+
+  chatUser -right-> chatCli : 1. enter message
+  chatCli -right-> chatController : 2. sendChatMessage(...)
+  chatController -right-> chatService : 3. delegate
+  chatService -down-> chatUserSessionRepo : 4. load active session
+  chatService -down-> chatMessageRepo : 5. save user message
+  chatService -right-> chatAi : 6. generateResponse(...)
+  chatAi -down-> chatRag : 7. buildContext(...)
+  chatRag -right-> chatVector : 8. similaritySearch(...)
+  chatAi -right-> chatLlm : 9. request completion
+  chatAi -down-> chatAi : 10. detectCrisis(...)
+  chatAi -left-> chatService : 11. return reply
+  chatService -down-> chatMessageRepo : 12. save assistant message
+  chatService -left-> chatController : 13. SessionChatResponse
+  chatController -left-> chatCli : 14. return DTO
+  chatCli -left-> chatUser : 15. display assistant message
+}
+
+package "C. Diary Entry AI Analysis Flow" #FEF9E7 {
+  class "User" as diaryUser <<Actor>> #FCF3CF
+  class "CLI /\nDiaryCommands" as diaryCli <<Boundary>> #D6EAF8
+  class "DiaryController" as diaryController <<Boundary>> #D6EAF8
+  class "DiaryServiceImpl" as diaryService <<Control>> #D6EAF8
+  class "UserRepository" as diaryUserRepo <<Repository>> #F4ECF7
+  class "DiaryEntryRepository" as diaryEntryRepo <<Repository>> #F4ECF7
+  class "OpenAiService" as diaryAi <<Control>> #D5F5E3
+  class "CognitiveDistortionRepository" as distortionRepo <<Repository>> #F4ECF7
+  class "LlmClient / LLM Provider" as diaryLlm <<External>> #FCF3CF
+
+  left to right direction
+
+  diaryUser -right-> diaryCli : 1. submit entry
+  diaryCli -right-> diaryController : 2. createEntry(...)
+  diaryController -right-> diaryService : 3. delegate
+  diaryService -down-> diaryUserRepo : 4. find user
+  diaryService -down-> diaryEntryRepo : 5. save diary entry
+  diaryUser -down-> diaryCli : 6. request suggestions
+  diaryCli -right-> diaryController : 7. suggestDistortions(...)
+  diaryController -right-> diaryService : 8. delegate analysis
+  diaryService -right-> diaryAi : 9. analyzeThought(...)
+  diaryAi -down-> distortionRepo : 10. load known distortion IDs
+  diaryAi -right-> diaryLlm : 11. classify distortions
+  diaryService -right-> diaryAi : 12. generateReframingPrompts(...)
+  diaryAi -right-> diaryLlm : 13. generate prompts
+  diaryAi -left-> diaryService : 14. suggestions and prompts
+  diaryService -left-> diaryController : 15. response payload
+  diaryController -left-> diaryCli : 16. return suggestions
+  diaryCli -left-> diaryUser : 17. show distortions and guidance
+}
+
+A -down[hidden]-> B
+B -down[hidden]-> C
+
+legend right
+|= Notation |= Meaning |
+| Interface/Class | Code structure and dependency view |
+| Class with stereotype | Runtime participant in a flow |
+| `<<Repository>>` | Repository or persistent dependency |
+| Numbered arrow | Ordered interaction step |
+| Dashed arrow | Conceptual responsibility |
+endlegend
+
+@enduml

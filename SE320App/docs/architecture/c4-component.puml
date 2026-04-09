@@ -1,0 +1,122 @@
+@startuml c4-component
+title Digital Therapy Assistant - C4 Level 3 Component Diagram
+
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam packageStyle rectangle
+skinparam wrapWidth 220
+skinparam maxMessageSize 220
+skinparam rectangle {
+  RoundCorner 10
+  BorderColor #2F4858
+}
+
+rectangle "CLI Layer" as cliLayer #FDEBD0 {
+  rectangle "Menu\n`com.SE320.therapy.cli.commands.Menu`\nRoutes user selections to command groups" as menu #FAD7A0
+}
+
+rectangle "Controller Layer" as controllerLayer #D6EAF8 {
+  rectangle "UserController\nHandles register, login,\nrefresh, logout, delete" as authController #AED6F1
+  rectangle "SessionController\nStarts sessions, chat,\nends sessions, retrieves library" as sessionController #AED6F1
+  rectangle "DiaryController\nCreates diary entries,\nretrieves insights,\nsuggests distortions" as diaryController #AED6F1
+  rectangle "DashboardController\nAggregates trends,\nburnout recovery,\nachievements" as progressController #AED6F1
+  rectangle "CrisisController\nCrisis hub, detection,\ncoping strategies,\nsafety plan" as crisisController #AED6F1
+}
+
+rectangle "Service Layer" as serviceLayer #E8F8F5 {
+  rectangle "AuthService + Authentication\nRegistration, login,\nrefresh, token lifecycle" as authService #A9DFBF
+  rectangle "SessionService\nSession lifecycle,\nchat persistence,\nAI reply orchestration" as sessionService #A9DFBF
+  rectangle "DiaryService / DiaryServiceImpl\nDiary CRUD, insights,\ndistortion suggestion workflow" as diaryService #A9DFBF
+  rectangle "DashboardService\nProgress analytics,\nachievement management" as progressService #A9DFBF
+  rectangle "CrisisService\nCrisis support content,\nsafety plans,\ncrisis detection orchestration" as crisisService #A9DFBF
+  rectangle "AiService / OpenAiService\nLLM integration, session summarization,\ndistortion analysis, reframing prompts,\ncrisis detection" as aiService #A9DFBF
+}
+
+rectangle "Repository Layer" as repositoryLayer #F4ECF7 {
+  rectangle "UserRepository" as userRepository #D7BDE2
+  rectangle "SessionRepository" as sessionRepository #D7BDE2
+  rectangle "DiaryEntryRepository" as diaryEntryRepository #D7BDE2
+  rectangle "ChatMessageRepository" as chatMessageRepository #D7BDE2
+  rectangle "UserSessionRepository" as userSessionRepository #D7BDE2
+  rectangle "SafetyPlanRepository" as safetyPlanRepository #D7BDE2
+  rectangle "AchievementRepository" as achievementRepository #D7BDE2
+  rectangle "CognitiveDistortionRepository" as cognitiveDistortionRepository #D7BDE2
+}
+
+rectangle "AI Integration" as aiLayer #FCF3CF {
+  rectangle "RagContextBuilder\nBuilds prompt context from KB,\ndiaries, prior sessions,\nand transcript history" as ragBuilder #F9E79F
+  rectangle "SimpleVectorStore\nSimilarity search over embedded\nknowledge documents" as simpleVectorStore #F9E79F
+  rectangle "OpenAI REST Client\nImplemented via Spring `RestClient`\ninside `OpenAiService`" as llmClient #F9E79F
+  rectangle "Crisis Detection Logic\nImplemented in `OpenAiService.detectCrisis(...)`\nand `CrisisService`" as crisisDetector #F9E79F
+}
+
+rectangle "Security" as securityLayer #FADBD8 {
+  rectangle "JwtAuthenticationFilter\nExtracts bearer tokens\nand authenticates requests" as jwtFilter #F5B7B1
+  rectangle "JwtService\nGenerates and validates JWTs" as jwtProvider #F5B7B1
+  rectangle "SecurityConfig\nDefines public routes,\nprotected routes,\nand filter chain" as securityConfig #F5B7B1
+}
+
+database "MySQL Database" as mysql #A9DFBF
+folder "Knowledge Base JSON\n`cbt-techniques.json`\n`distortions.json`\n`crisis-protocols.json`" as knowledgeBase #FCF3CF
+
+menu --> authController : invokes auth commands
+menu --> sessionController : invokes session commands
+menu --> diaryController : invokes diary commands
+menu --> progressController : invokes dashboard commands
+menu --> crisisController : invokes crisis commands
+
+authController --> authService : delegates auth operations
+sessionController --> sessionService : delegates session workflows
+diaryController --> diaryService : delegates diary workflows
+progressController --> progressService : delegates progress workflows
+crisisController --> crisisService : delegates crisis workflows
+
+sessionService --> aiService : generates AI replies and summaries
+diaryService --> aiService : analyzes distortions and reframing prompts
+crisisService --> aiService : performs crisis analysis
+
+authService --> userRepository : loads and saves users
+sessionService --> sessionRepository : reads session catalog
+sessionService --> userRepository : validates users
+sessionService --> userSessionRepository : loads active sessions
+sessionService --> chatMessageRepository : stores transcript messages
+diaryService --> diaryEntryRepository : stores and reads diary entries
+diaryService --> userRepository : validates diary owner
+progressService --> achievementRepository : manages achievements
+crisisService --> safetyPlanRepository : persists safety plans
+crisisService --> userRepository : validates crisis user
+aiService --> diaryEntryRepository : computes diary insights
+aiService --> chatMessageRepository : summarizes session transcript
+aiService --> userSessionRepository : loads session metadata
+aiService --> cognitiveDistortionRepository : validates distortion IDs
+
+aiService --> ragBuilder : builds retrieval context
+ragBuilder --> simpleVectorStore : similarity search
+ragBuilder --> knowledgeBase : uses embedded CBT documents
+aiService --> llmClient : sends chat completion requests
+aiService --> crisisDetector : applies keyword and AI crisis analysis
+
+securityConfig --> jwtFilter : inserts filter into chain
+jwtFilter --> jwtProvider : validates tokens
+authService --> jwtProvider : issues access and refresh tokens
+
+userRepository --> mysql
+sessionRepository --> mysql
+diaryEntryRepository --> mysql
+chatMessageRepository --> mysql
+userSessionRepository --> mysql
+safetyPlanRepository --> mysql
+achievementRepository --> mysql
+cognitiveDistortionRepository --> mysql
+
+legend right
+|= Area |= Meaning |
+| <back:#D6EAF8>Controller Layer</back> | HTTP entry points |
+| <back:#E8F8F5>Service Layer</back> | Business orchestration |
+| <back:#F4ECF7>Repository Layer</back> | Persistence access |
+| <back:#FCF3CF>AI Integration</back> | RAG and LLM collaboration |
+| <back:#FADBD8>Security</back> | Authentication and authorization |
+endlegend
+
+@enduml
