@@ -52,6 +52,7 @@ public class OpenAiService implements AiService {
             "want to die",
             "hurt myself",
             "self-harm");
+    private static final int MAX_TRANSCRIPT_CHARS = 12000;
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
@@ -266,15 +267,19 @@ public class OpenAiService implements AiService {
 
     @Override
     public String summarizeSession(UUID sessionId) {
-        List<ChatMessage> messages = chatMessageRepository.findByUserSession_IdOrderByTimestampAsc(sessionId);
-        if (messages.isEmpty()) {
+        if (sessionId == null) {
             return "Session completed. No transcript was available for summarization.";
         }
 
-        String transcript = messages.stream()
-                .map(message -> message.getRole() + ": " + message.getContent())
-                .reduce((left, right) -> left + "\n" + right)
-                .orElse("");
+        List<ChatMessage> messages = chatMessageRepository.findByUserSession_IdOrderByTimestampAsc(sessionId);
+        if (messages == null || messages.isEmpty()) {
+            return "Session completed. No transcript was available for summarization.";
+        }
+
+        String transcript = buildTranscript(messages);
+        if (transcript.isBlank()) {
+            return "Session completed. No transcript was available for summarization.";
+        }
 
         if (!isConfigured()) {
             log.warn("OPENAI_API_KEY is not configured. Using fallback session summary for sessionId={}", sessionId);
@@ -315,6 +320,9 @@ public class OpenAiService implements AiService {
                 .body(request)
                 .retrieve()
                 .body(String.class);
+        if (responseBody == null || responseBody.isBlank()) {
+            throw new IllegalStateException("OpenAI response body was empty.");
+        }
 
         JsonNode response;
         try {
@@ -327,11 +335,39 @@ public class OpenAiService implements AiService {
             throw new IllegalStateException("OpenAI response did not contain any choices.");
         }
 
-        String content = response.path("choices").get(0).path("message").path("content").asText();
+        JsonNode firstChoice = response.path("choices").get(0);
+        String content = firstChoice.path("message").path("content").asText(null);
+        if (content == null || content.isBlank()) {
+            // Some model/tool responses may return a direct text field.
+            content = firstChoice.path("text").asText(null);
+        }
         if (content == null || content.isBlank()) {
             throw new IllegalStateException("OpenAI response content was empty.");
         }
         return content.trim();
+    }
+
+    private String buildTranscript(List<ChatMessage> messages) {
+        List<String> lines = messages.stream()
+                .filter(message -> message != null)
+                .filter(message -> message.getContent() != null && !message.getContent().trim().isEmpty())
+                .map(message -> {
+                    String role = message.getRole() == null ? "UNKNOWN" : message.getRole().name();
+                    return role + ": " + message.getContent().trim();
+                })
+                .toList();
+
+        if (lines.isEmpty()) {
+            return "";
+        }
+
+        String transcript = String.join("\n", lines);
+        if (transcript.length() <= MAX_TRANSCRIPT_CHARS) {
+            return transcript;
+        }
+
+        // Keep the most recent segment to avoid very large prompts.
+        return transcript.substring(transcript.length() - MAX_TRANSCRIPT_CHARS);
     }
 
     private List<DistortionSuggestion> parseDistortionSuggestions(String responseContent, List<String> allowedIds) {

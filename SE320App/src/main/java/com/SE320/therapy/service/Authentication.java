@@ -5,21 +5,12 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -207,74 +198,6 @@ public class Authentication implements AuthService {
         } catch (Exception e) {
             log.error("Failed to delete user with userId={} and email={}", userId, email, e);
             throw new RuntimeException("Failed to delete user", e);
-        }
-    }
-
-    public User login(String email, String password, HttpServletRequest request) {
-        if (email == null || password == null || request == null) {
-            throw new IllegalArgumentException("email, password, and request are required");
-        }
-        try {
-            log.info("Attempting session login for email={}", email);
-            User user = authenticateCredentials(email, password);
-            setUserOnline(user, true);
-            issueTokens(user);
-
-            List<GrantedAuthority> authorities = List.of(
-                new SimpleGrantedAuthority("ROLE_" + user.getUserType().name())
-            );
-            AuthenticatedUser principal = new AuthenticatedUser(
-                user.getId(),
-                user.getEmail(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getUserType()
-            );
-
-            UsernamePasswordAuthenticationToken authentication =
-                UsernamePasswordAuthenticationToken.authenticated(principal, null, authorities);
-            SecurityContext context = SecurityContextHolder.createEmptyContext();
-            context.setAuthentication(authentication);
-            SecurityContextHolder.setContext(context);
-
-            HttpSession session = request.getSession(true);
-            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-            log.info("Session login succeeded for userId={} and email={}", user.getId(), user.getEmail());
-            return user;
-        } catch (ResponseStatusException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Failed session login for email={}", email, e);
-            throw new RuntimeException("Failed to log in user", e);
-        }
-    }
-
-    public void logout(HttpServletRequest request) {
-        if (request == null) {
-            throw new IllegalArgumentException("request is required");
-        }
-        try {
-            log.info("Logging out current HTTP session");
-            Object principal = SecurityContextHolder.getContext().getAuthentication() != null
-                ? SecurityContextHolder.getContext().getAuthentication().getPrincipal()
-                : null;
-
-            if (principal instanceof AuthenticatedUser authenticatedUser) {
-                log.info("Found authenticated session for userId={}", authenticatedUser.id());
-                userRepository.findById(authenticatedUser.id()).ifPresent(user -> {
-                    setUserOnline(user, false);
-                });
-            }
-
-            HttpSession session = request.getSession(false);
-            SecurityContextHolder.clearContext();
-            if (session != null) {
-                session.invalidate();
-            }
-            log.info("HTTP session logout completed");
-        } catch (Exception e) {
-            log.error("Failed to log out current HTTP session", e);
-            throw new RuntimeException("Failed to log out user", e);
         }
     }
 
