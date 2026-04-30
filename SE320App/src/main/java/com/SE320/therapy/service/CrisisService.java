@@ -7,6 +7,8 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.SE320.therapy.dto.CrisisDetectionRequest;
 import com.SE320.therapy.dto.CrisisDetectionResponse;
@@ -19,6 +21,8 @@ import com.SE320.therapy.repository.UserRepository;
 
 @Service
 public class CrisisService {
+
+    private static final Logger log = LoggerFactory.getLogger(CrisisService.class);
 
     private final UserRepository userRepository;
     private final SafetyPlanRepository safetyPlanRepository;
@@ -38,7 +42,7 @@ public class CrisisService {
     }
 
     public Crisis getCrisis() {
-        System.out.println("[CrisisService] Loading crisis support content...");
+        log.debug("Loading crisis support content");
         return new Crisis(
                 crisis.getWarningSignRecognition(),
                 crisis.getDeescalationTechniques(),
@@ -48,7 +52,7 @@ public class CrisisService {
     }
 
     public Crisis getCrisis(UUID userId) {
-        System.out.println("[CrisisService] Loading crisis support content for user...");
+        log.debug("Loading crisis support content for userId={}", userId);
         return new Crisis(
                 userId,
                 crisis.getWarningSignRecognition(),
@@ -59,39 +63,36 @@ public class CrisisService {
     }
 
     public List<String> warningSignRecognition() {
-        System.out.println("[CrisisService] Retrieving warning sign recognition guidance...");
+        log.debug("Retrieving warning sign recognition guidance");
         return getCrisis().getWarningSignRecognition();
     }
 
     public List<String> emergencyResources() {
-        System.out.println("[CrisisService] Retrieving emergency support resources...");
+        log.debug("Retrieving emergency support resources");
         return getCrisis().getEmergencyResources();
     }
 
     public void panicButton() {
-        System.out.println("[CrisisService] Panic button activated.");
-        System.out.println("[CrisisService] MOCK MODE: Simulating contact with emergency services.");
-        System.out.println("[CrisisService] No real emergency call has been placed.");
-        System.out.println("[CrisisService] Alerting saved emergency contacts in mock workflow.");
+        log.warn("Panic button activated in mock mode; no real emergency call has been placed");
     }
 
     public List<String> copingStrategies() {
-        System.out.println("[CrisisService] Loading coping strategies...");
+        log.debug("Loading coping strategies");
         return getCrisis().getDeescalationTechniques();
     }
 
     public List<String> safetyPlan() {
-        System.out.println("[CrisisService] Opening user safety plan...");
+        log.debug("Opening default user safety plan");
         return getCrisis().getSafetyPlanningSteps();
     }
 
     public List<String> safetyPlan(UUID userId) {
-        System.out.println("[CrisisService] Opening persistent user safety plan...");
+        log.debug("Opening persistent user safety plan for userId={}", userId);
         return getSafetyPlan(userId);
     }
 
     public List<String> saveSafetyPlan(UUID userId, List<String> steps) {
-        System.out.println("[CrisisService] Saving persistent user safety plan...");
+        log.debug("Saving persistent user safety plan for userId={}", userId);
         User user = getRequiredUser(userId);
         SafetyPlan safetyPlan = safetyPlanRepository.findByUser_Id(userId)
                 .orElseGet(() -> new SafetyPlan(null, user, List.of()));
@@ -102,7 +103,7 @@ public class CrisisService {
     }
 
     public CrisisDetectionResponse detectCrisisIndicators(CrisisDetectionRequest request) {
-        System.out.println("[CrisisService] Detecting crisis indicators...");
+        log.debug("Detecting crisis indicators");
         validateDetectionRequest(request);
 
         if (aiService != null && request.getMessage() != null && !request.getMessage().isBlank()) {
