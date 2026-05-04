@@ -1,0 +1,26 @@
+{
+  "mcpServers": {
+    "digital-therapy-assistant": {
+      "command": "java",
+      "args": [
+        "-jar",
+        "C:\\Users\\Nikolai\\OneDrive\\Documents\\GitHub\\SE320\\SE320App\\target\\SE320App-1.0-SNAPSHOT-exec.jar",
+        "--app.cli.enabled=false",
+        "--spring.ai.mcp.server.enabled=true",
+        "--spring.ai.mcp.server.stdio=true",
+        "--spring.main.web-application-type=none",
+        "--spring.main.banner-mode=off",
+        "--logging.level.root=OFF",
+        "--logging.level.com.SE320=OFF",
+        "--logging.level.org.springframework=OFF",
+        "--logging.level.com.zaxxer.hikari=OFF"
+      ],
+      "env": {
+        "OPENAI_API_KEY": "replace-with-your-openai-api-key",
+        "MYSQL_URL": "jdbc:mysql://localhost:3306/se320?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
+        "MYSQL_USER": "se320_user",
+        "MYSQL_PASSWORD": "replace-with-your-mysql-password"
+      }
+    }
+  }
+}

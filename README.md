@@ -184,6 +184,68 @@ mvn verify
 
 JaCoCo report is generated under `SE320App/target/site/jacoco/`.
 
+## MCP Server
+
+The app includes a Spring AI MCP server that exposes the Digital Therapy Assistant service layer to MCP-compatible AI clients. The MCP layer keeps using the existing backend services and OpenAI/RAG implementation, so the AI behavior stays consistent with the REST API.
+
+### Run In STDIO Mode
+
+Build the jar first:
+
+```bash
+cd SE320App
+mvn package
+```
+
+Start the MCP server over standard input/output:
+
+```bash
+java -jar target/SE320App-1.0-SNAPSHOT-exec.jar --app.cli.enabled=false --spring.ai.mcp.server.enabled=true --spring.ai.mcp.server.stdio=true --spring.main.web-application-type=none --spring.main.banner-mode=off --logging.level.root=OFF
+```
+
+`--app.cli.enabled=false` is required because the old CLI also uses stdin/stdout. In MCP stdio mode, the AI client owns those streams and exchanges JSON-RPC messages with the Spring Boot process.
+
+### Client Configuration
+
+A Claude Desktop-compatible MCP config is provided at:
+
+- `SE320App/docs/claude_desktop_mcp_config.json`
+
+The server is not Claude-specific. Claude Desktop is just a convenient MCP host for testing; the tool implementations still use the existing OpenAI-backed `AiService`.
+
+### Tools
+
+- `start_session(userId, sessionId)`
+- `chat_in_session(sessionId, message)`
+- `end_session(sessionId, reason)`
+- `get_session_library(userId)`
+- `get_session_history(userId)`
+- `create_diary_entry(userId, situation, automaticThought, emotions)`
+- `analyze_thought(thought)`
+- `suggest_reframing(thought, distortionIds)`
+- `detect_crisis(text)`
+- `get_weekly_progress(userId)`
+- `get_insights(userId)`
+- `get_coping_strategies()`
+
+For `chat_in_session` and `end_session`, use the `userSessionId` returned by `start_session` as the active `sessionId`.
+
+### Resources
+
+- `therapy://sessions/{sessionId}`
+- `therapy://diary/{userId}`
+- `therapy://diary/entry/{entryId}`
+- `therapy://progress/{userId}`
+- `therapy://distortions`
+- `therapy://crisis/resources`
+- `therapy://safety-plan/{userId}`
+
+### Prompts
+
+- `thought_analysis(thought)`
+- `session_summary(sessionId)`
+- `weekly_check_in(userId)`
+
 ## Data Model
 
 The ERD is documented in:
