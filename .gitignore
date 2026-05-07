@@ -1,4 +1,7 @@
 .env
 /SE320App/target/
 *.class
+SE320App/frontend/.next/
+SE320App/frontend/node_modules/
+SE320App/frontend/.env.local
 

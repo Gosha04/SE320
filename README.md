@@ -109,14 +109,28 @@ cd SE320App
 mvn spring-boot:run
 ```
 
-By default, the interactive CLI is enabled. To run API-only mode:
+The legacy CLI remains available for local troubleshooting, but the web app is the default interface. To temporarily run the CLI:
 
 ```bash
 cd SE320App
-mvn spring-boot:run -Dspring-boot.run.arguments=--app.cli.enabled=false
+mvn spring-boot:run -Dspring-boot.run.arguments=--app.cli.enabled=true
 ```
 
-### 3) Open API docs
+### 3) Run the frontend
+
+The primary UI is now the single-page frontend in `SE320App/frontend`. It runs on port `3000` and communicates with the Spring Boot API on port `8080` through REST endpoints.
+
+```bash
+cd SE320App/frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000`.
+
+The frontend includes `"proxy": "http://localhost:8080"` in `package.json` and Next.js rewrites for local development, so browser requests to `/auth`, `/sessions`, `/diary`, `/progress`, and `/crisis` are forwarded to the backend.
+
+### 4) Open API docs
 
 - Swagger UI: `http://localhost:8080/swagger-ui`
 - OpenAPI JSON: `http://localhost:8080/v3/api-docs`
