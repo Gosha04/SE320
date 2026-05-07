@@ -57,7 +57,7 @@ rectangle "Security" as securityLayer #FADBD8 {
   rectangle "SecurityConfig\nDefines public routes,\nprotected routes,\nand filter chain" as securityConfig #F5B7B1
 }
 
-database "MySQL Database" as mysql #A9DFBF
+database "H2 Database" as h2 #A9DFBF
 folder "Knowledge Base JSON\n`cbt-techniques.json`\n`distortions.json`\n`crisis-protocols.json`" as knowledgeBase #FCF3CF
 
 menu --> authController : invokes auth commands
@@ -101,14 +101,14 @@ securityConfig --> jwtFilter : inserts filter into chain
 jwtFilter --> jwtProvider : validates tokens
 authService --> jwtProvider : issues access and refresh tokens
 
-userRepository --> mysql
-sessionRepository --> mysql
-diaryEntryRepository --> mysql
-chatMessageRepository --> mysql
-userSessionRepository --> mysql
-safetyPlanRepository --> mysql
-achievementRepository --> mysql
-cognitiveDistortionRepository --> mysql
+userRepository --> h2
+sessionRepository --> h2
+diaryEntryRepository --> h2
+chatMessageRepository --> h2
+userSessionRepository --> h2
+safetyPlanRepository --> h2
+achievementRepository --> h2
+cognitiveDistortionRepository --> h2
 
 legend right
 |= Area |= Meaning |

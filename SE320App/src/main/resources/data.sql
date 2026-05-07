@@ -1,5 +1,5 @@
 -- Seed: Cognitive Distortions
-INSERT INTO cognitive_distortions (id, name, description) VALUES
+MERGE INTO cognitive_distortions (id, name, description) KEY(id) VALUES
 ('all-or-nothing', 'All-or-Nothing Thinking', 'Seeing situations in black-and-white categories with no middle ground.'),
 ('catastrophizing', 'Catastrophizing', 'Expecting the worst possible outcome and treating it as likely.'),
 ('mind-reading', 'Mind Reading', 'Assuming you know what others are thinking without evidence.'),
@@ -7,12 +7,9 @@ INSERT INTO cognitive_distortions (id, name, description) VALUES
 ('overgeneralization', 'Overgeneralization', 'Drawing broad, negative conclusions from a single event.'),
 ('labeling', 'Labeling', 'Assigning fixed, global labels to yourself or others based on specific behaviors.'),
 ('emotional-reasoning', 'Emotional Reasoning', 'Believing something is true because it feels true.'),
-('should-statements', 'Should Statements', 'Using rigid rules about how you or others should behave.')
-ON DUPLICATE KEY UPDATE
-    name = VALUES(name),
-    description = VALUES(description);
+('should-statements', 'Should Statements', 'Using rigid rules about how you or others should behave.');
 
-INSERT IGNORE INTO cognitive_distortion_examples (distortion_id, example) VALUES
+MERGE INTO cognitive_distortion_examples (distortion_id, example) KEY(distortion_id, example) VALUES
 ('all-or-nothing', 'If I make one mistake, I am a total failure.'),
 ('catastrophizing', 'If I do poorly on this test, my life is ruined.'),
 ('mind-reading', 'They did not reply quickly, so they must be upset with me.'),
@@ -23,27 +20,18 @@ INSERT IGNORE INTO cognitive_distortion_examples (distortion_id, example) VALUES
 ('should-statements', 'I should always be productive, no matter what.');
 
 -- Seed: Session Modules
-INSERT INTO session_modules (id, name) VALUES
+MERGE INTO session_modules (id, name) KEY(id) VALUES
 ('11111111-1111-1111-1111-111111111111', 'Foundations'),
 ('22222222-2222-2222-2222-222222222222', 'Thought Work'),
-('33333333-3333-3333-3333-333333333333', 'Behavior Change')
-ON DUPLICATE KEY UPDATE
-    name = VALUES(name);
+('33333333-3333-3333-3333-333333333333', 'Behavior Change');
 
 -- Seed: Sample CBT Sessions
-INSERT INTO cbt_sessions (id, module_id, title, description, duration_minutes, order_index, session_id) VALUES
+MERGE INTO cbt_sessions (id, module_id, title, description, duration_minutes, order_index, session_id) KEY(id) VALUES
 ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1', '11111111-1111-1111-1111-111111111111', 'Understanding Thoughts, Feelings, and Behaviors', 'Introduces the CBT model and the connection between thoughts, emotions, and actions.', 20, 1, 1001),
 ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', '22222222-2222-2222-2222-222222222222', 'Thought Record Practice', 'Guided practice identifying automatic thoughts and building balanced alternatives.', 25, 2, 1002),
-('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3', '33333333-3333-3333-3333-333333333333', 'Behavioral Activation Planning', 'Create a small, achievable activity plan to improve mood through action.', 20, 3, 1003)
-ON DUPLICATE KEY UPDATE
-    module_id = VALUES(module_id),
-    title = VALUES(title),
-    description = VALUES(description),
-    duration_minutes = VALUES(duration_minutes),
-    order_index = VALUES(order_index),
-    session_id = VALUES(session_id);
+('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3', '33333333-3333-3333-3333-333333333333', 'Behavioral Activation Planning', 'Create a small, achievable activity plan to improve mood through action.', 20, 3, 1003);
 
-INSERT IGNORE INTO cbt_session_objectives (session_id, objective) VALUES
+MERGE INTO cbt_session_objectives (session_id, objective) KEY(session_id, objective) VALUES
 ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1', 'Understand the CBT triangle.'),
 ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1', 'Recognize how thoughts influence mood.'),
 ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', 'Identify automatic thoughts in a real scenario.'),
@@ -51,7 +39,7 @@ INSERT IGNORE INTO cbt_session_objectives (session_id, objective) VALUES
 ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3', 'Select one values-based activity.'),
 ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3', 'Define a realistic completion plan.');
 
-INSERT IGNORE INTO cbt_session_modalities (session_id, modality) VALUES
+MERGE INTO cbt_session_modalities (session_id, modality) KEY(session_id, modality) VALUES
 ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1', 'COGNITIVE'),
 ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1', 'MINDFULNESS'),
 ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa2', 'COGNITIVE'),
@@ -59,14 +47,10 @@ INSERT IGNORE INTO cbt_session_modalities (session_id, modality) VALUES
 ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa3', 'BEHAVIORAL');
 
 -- Seed: Coping Strategies
-INSERT INTO coping_strategies (id, name, category, description) VALUES
+MERGE INTO coping_strategies (id, name, category, description) KEY(id) VALUES
 ('44444444-4444-4444-4444-444444444441', 'Box Breathing', 'Breathing', 'Inhale for 4 seconds, hold for 4, exhale for 4, hold for 4. Repeat for 2-5 minutes.'),
 ('44444444-4444-4444-4444-444444444442', '5-4-3-2-1 Grounding', 'Grounding', 'Name 5 things you see, 4 feel, 3 hear, 2 smell, and 1 taste to reconnect with the present.'),
 ('44444444-4444-4444-4444-444444444443', 'Thought Reframing', 'Cognitive', 'Identify a negative automatic thought and replace it with a balanced, evidence-based alternative.'),
 ('44444444-4444-4444-4444-444444444444', 'Behavioral Activation Micro-Step', 'Behavioral', 'Choose one small, meaningful action you can complete in under 10 minutes.'),
 ('44444444-4444-4444-4444-444444444445', 'Progressive Muscle Relaxation', 'Relaxation', 'Tense and release muscle groups from head to toe while breathing slowly.'),
-('44444444-4444-4444-4444-444444444446', 'Compassionate Self-Talk', 'Self-Compassion', 'Respond to self-criticism as you would to a close friend with warmth and realism.')
-ON DUPLICATE KEY UPDATE
-    name = VALUES(name),
-    category = VALUES(category),
-    description = VALUES(description);
+('44444444-4444-4444-4444-444444444446', 'Compassionate Self-Talk', 'Self-Compassion', 'Respond to self-criticism as you would to a close friend with warmth and realism.');

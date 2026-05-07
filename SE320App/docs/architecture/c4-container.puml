@@ -19,7 +19,7 @@ rectangle "Digital Therapy Assistant" as boundary #EBF5FB {
 
   rectangle "Spring Boot Application\n<<Container>>\nREST controllers, services, security,\nrepositories, DTOs, and orchestration logic" as app #5DADE2
 
-  database "MySQL Database\n<<Container>>\nRelational persistence for users, sessions,\nchat messages, diary entries, achievements,\nand safety plans" as db #A9DFBF
+  database "H2 Database\n<<Container>>\nRelational persistence for users, sessions,\nchat messages, diary entries, achievements,\nand safety plans" as db #A9DFBF
 
   rectangle "SimpleVector Store\n<<Container>>\nJSON-backed vector store at `data/vector-store.json`\nfor similarity search used by RAG" as vector #A9DFBF
 
