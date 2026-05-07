@@ -14,7 +14,7 @@ Project notes:
 - The project root application module is `SE320App/`.
 - The Java package is `com.SE320.therapy`.
 - The running backend is a Spring Boot application with both REST API endpoints and an embedded CLI menu.
-- The current datasource is MySQL.
+- The current datasource is H2.
 - `UserController` is the authentication and user management controller.
 - `DashboardController` is the progress and analytics controller.
 - `JwtService` is the JWT generation and validation service.

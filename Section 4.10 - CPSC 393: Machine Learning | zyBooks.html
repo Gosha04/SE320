@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta
+            content="IE=edge"
+            http-equiv="X-UA-Compatible"
+        />
+        <title>zyBooks</title>
+        <meta
+            content=""
+            name="description"
+        />
+        <meta
+            content="width=device-width, initial-scale=1"
+            name="viewport"
+        />
+        <link
+            href="/assets/favicon.ico"
+            integrity=""
+            rel="icon"
+        />
+
+        <meta name="zybooks-web/config/environment" content="%7B%22appName%22%3A%22zybooks-web%22%2C%22environment%22%3A%22production%22%2C%22localRun%22%3Afalse%2C%22locationType%22%3A%22history%22%2C%22modulePrefix%22%3A%22zybooks-web%22%2C%22podModulePrefix%22%3A%22zybooks-web%2Froutes%22%2C%22rootURL%22%3A%22%2F%22%2C%22EmberENV%22%3A%7B%22EXTEND_PROTOTYPES%22%3Afalse%2C%22FEATURES%22%3A%7B%7D%2C%22_APPLICATION_TEMPLATE_WRAPPER%22%3Afalse%2C%22_DEFAULT_ASYNC_OBSERVERS%22%3Atrue%2C%22_JQUERY_INTEGRATION%22%3Afalse%2C%22_TEMPLATE_ONLY_GLIMMER_COMPONENTS%22%3Atrue%7D%2C%22APP%22%3A%7B%22BUILDKEY%22%3A%22bc4118e2-cfdb-7e78-450a-3ae25e595f58%22%2C%22OVERRIDES%22%3A%7B%7D%2C%22IS_RUNNING_TEST_WITHOUT_SERVER_ARGS%22%3Afalse%7D%2C%22moment%22%3A%7B%22includeTimezone%22%3A%22subset%22%7D%2C%22stripe%22%3A%7B%22lazyLoad%22%3Atrue%2C%22publishableKey%22%3A%22pk_live_6WfpM1NZl9sSnKivV9WvGD2H%22%7D%2C%22ember-froala-editor%22%3A%7B%22key%22%3A%22eHE5C-11E3A2D2I2B6C4C1td1CGHNOa1TNSPH1e1J1VLPUUCVd1FC-22C4A3C3C1D4F2C2C3B3A1%3D%3D%22%2C%22imageAllowedTypes%22%3A%5B%22gif%22%2C%22jpeg%22%2C%22jpg%22%2C%22png%22%5D%2C%22imageMaxSize%22%3A10000000%2C%22imageUploadMethod%22%3A%22POST%22%2C%22videoAllowedTypes%22%3A%5B%22mp4%22%5D%2C%22videoMaxSize%22%3A300000000%2C%22videoUploadMethod%22%3A%22POST%22%2C%22videoInsertButtons%22%3A%5B%22videoUpload%22%5D%7D%2C%22%40sentry%2Fember%22%3A%7B%22sentry%22%3A%7B%22environment%22%3A%22production%22%2C%22release%22%3A%2250be00c75f088ec76d9d5942a3c0461f7f7dff3b%22%7D%2C%22disableInitialLoadInstrumentation%22%3Afalse%2C%22disablePerformance%22%3Afalse%7D%2C%22ember-cli-content-security-policy%22%3A%7B%22policy%22%3A%22connect-src%20'self'%20https%3A%2F%2F*.zybooks.com%20https%3A%2F%2F*.s3.amazonaws.com%20https%3A%2F%2F*.ingest.us.sentry.io%20https%3A%2F%2Fs3-us-west-2.amazonaws.com%20https%3A%2F%2F*.g.doubleclick.net%20https%3A%2F%2F*.analytics.google.com%20https%3A%2F%2Fanalytics.google.com%20https%3A%2F%2Fcmp.osano.com%20https%3A%2F%2Fapp.hopscotch.club%20https%3A%2F%2Fwidgets.hopscotch.club%20consent.api.osano.com%20tattle.api.osano.com%20cmp.osano.com%20disclosure.api.osano.com%3B%20default-src%20'none'%3B%20font-src%20'self'%20https%3A%2F%2Ffonts.gstatic.com%20https%3A%2F%2F*.zybooks.com%20data%3A%3B%20frame-ancestors%20*%20*.instructure.com%20*.schoology.com%20*.blackboard.com%20*.brightspace.com%20*.desire2learn.com%20*.umassonline.net%20*.mathworks.com%20*.brighthorizons.com%20*.moodlecloud.com%20*.mrooms3.net%20*.straighterline.com%20*.gostudyhall.com%20*.campusedu.com%20*.zybooks.com%20*.vcs.net%20*.mthree.com%20*.mrooms.net%20*.fullsail.com%20*.algonquincollege.com%20classroom.google.com%20learn.dcollege.net%20piazza.com%20*.binus.ac.id%20canvas.juacs.org%20*.riolearn.org%20corallanguage.org%20*.usask.ca%20*.uwaterloo.ca%20*.capu.ca%20*.uleth.ca%20*.wlu.ca%20*.smu.ca%20*.uwo.ca%20*.ontariotechu.ca%20*.willisonline.ca%20*.senecapolytechnic.ca%20*.yorku.ca%20*.uwindsor.ca%20*.concordia.ca%20*.nic.bc.ca%20*.torontomu.ca%20*.camosun.ca%20*.okanagan.bc.ca%20*.ucalgary.ca%20*.elearningontario.ca%20*.sheridancollege.ca%20*.stmarys.ca%20*.uoguelph.ca%20*.umanitoba.ca%20*.capilanou.ca%20*.utoronto.ca%20*.mohawkcollege.ca%20*.ualberta.ca%20*.saskpolytech.ca%20*.mcmaster.ca%20*.learnalberta.ca%20*.ubc.ca%20*.mycreds.ca%20www.fanshaweonline.ca%20www.gradescope.ca%20*.kfupm.edu.sa%20*.pmu.edu.sa%20https%3A%2F%2Feducation.wiley.com%20https%3A%2F%2Feducation-qa.wiley.com%3B%20frame-src%20'self'%20https%3A%2F%2F*.s3.amazonaws.com%20https%3A%2F%2Fplayer.vimeo.com%20https%3A%2F%2Fphet.colorado.edu%20https%3A%2F%2Fheadway-widget.net%20https%3A%2F%2Ftd.doubleclick.net%20https%3A%2F%2F*.codingrooms.com%20https%3A%2F%2F*.mathworks.com%20https%3A%2F%2F*.statuspage.io%20https%3A%2F%2F*.streamlit.app%20https%3A%2F%2Fconnect-js.stripe.com%20https%3A%2F%2Fjs.stripe.com%20https%3A%2F%2F*.youtube.com%20https%3A%2F%2F*.zybooks.com%20https%3A%2F%2Feducation.wiley.com%20https%3A%2F%2Feducation-qa.wiley.com%20https%3A%2F%2Fdrbuc2jl8158i.cloudfront.net%20consent.api.osano.com%20tattle.api.osano.com%20cmp.osano.com%20disclosure.api.osano.com%3B%20img-src%20'self'%20data%3A%20blob%3A%20https%3A%2F%2Fdrive.google.com%20https%3A%2F%2Flh3.googleusercontent.com%20https%3A%2F%2F*.googletagmanager.com%20https%3A%2F%2F*.stripe.com%20https%3A%2F%2F*.zybooks.com%20https%3A%2F%2Fres.cloudinary.com%3B%20media-src%20'self'%20https%3A%2F%2Fres.cloudinary.com%3B%20script-src%20'self'%20'unsafe-inline'%20'unsafe-eval'%20blob%3A%20https%3A%2F%2F*.googletagmanager.com%20https%3A%2F%2Fcdn.headwayapp.co%2Fwidget.js%20https%3A%2F%2F*.codingrooms.com%20https%3A%2F%2F*.statuspage.io%20https%3A%2F%2Fconnect-js.stripe.com%20https%3A%2F%2Fjs.stripe.com%20https%3A%2F%2Fm.stripe.network%20https%3A%2F%2Fcmp.osano.com%20https%3A%2F%2F*.zybooks.com%20https%3A%2F%2Fapp.hopscotch.club%20https%3A%2F%2Fwidgets.hopscotch.club%20consent.api.osano.com%20tattle.api.osano.com%20cmp.osano.com%20disclosure.api.osano.com%3B%20style-src%20'self'%20'unsafe-inline'%20https%3A%2F%2Ffonts.googleapis.com%20https%3A%2F%2Fcdn.headwayapp.co%2Fheadway-animate.css%20https%3A%2F%2F*.sentry.io%20consent.api.osano.com%20tattle.api.osano.com%20cmp.osano.com%20disclosure.api.osano.com%3B%22%2C%22reportOnly%22%3Afalse%7D%2C%22ember-websockets%22%3A%7B%22socketIO%22%3Atrue%7D%7D" />
+<script type="text/javascript">if (window.performance && window.performance.mark) {
+  window.performance.mark('@sentry/ember:initial-load-start');
+}
+</script>
+
+        <link
+            href="/assets/vendor-0f5b501efbe18d8b5011aae709b52aa8.css"
+            integrity=""
+            rel="stylesheet"
+        />
+<link rel="stylesheet" href="/assets/chunk.7817.4a3029a30a64359a47f7.css" integrity="sha256-+4YF0doQnH6Qp8gKTCJZ7Dw6HqZj5gUkjyQqDcV+zls= sha512-6l1retUW2SlMl33xiQkNtgQun4ugIZlUY90I7b/V1rrfrTwcegd6aQmaQYeP4uJFfyY8P188mWcz+GvO5gNl3A==" />
+        <link
+            href="/assets/zybooks-web-96b03f5f45d5070f4613ff4ed93a66e6.css"
+            integrity=""
+            rel="stylesheet"
+        />
+
+        <link
+            href="https://fonts.googleapis.com"
+            integrity=""
+            rel="preconnect"
+        />
+        <link
+            crossorigin
+            href="https://fonts.gstatic.com"
+            integrity=""
+            rel="preconnect"
+        />
+        <!-- crossorigin attribute needed to avoid error messages by the dom-to-image-more library -->
+        <link
+            crossorigin
+            href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap"
+            integrity=""
+            rel="stylesheet"
+        />
+        <link
+            crossorigin
+            href="https://fonts.googleapis.com/css?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Two+Tone|Material+Icons+Round|Material+Icons+Sharp|Material+Symbols+Outlined"
+            integrity=""
+            rel="stylesheet"
+        />
+        <link
+            href="/assets/basicLightbox.min-69bdb9cd40a5bbcb4587424b1c70f89b.css"
+            integrity=""
+            rel="stylesheet"
+        />
+        <script src="https://cmp.osano.com/AzZdRbSORDOOzF9W/7bcb33b1-2a0d-47aa-b8e1-177acffcdc7c/osano.js"></script>
+        <script
+            integrity=""
+            src="/assets/vendor-970b713408d45644151e9f5564e99738.js"
+        ></script>
+<script src="/assets/chunk.7817.4a3029a30a64359a47f7.js" integrity="sha256-vlr7QhW/avRKhdNQmcSLeTnXAOhNBD7C4MayGgbri8A= sha512-3CJ4ImNuW2hPWU7NoCLxoeN2Fr5/b973Lr+A4wo3jXCYn/XwAUHDeIv9uu+2ibdRxLageUtqWxhd56qYGZUVEA==" ></script>
+<script src="/assets/chunk.2919.c6daf0b8f0b27001bbde.js" integrity="sha256-Y09Utf0GokdGrJdy432hgDZRHM7PqfHP1g9a2pU4xUo= sha512-e3PnC18gkRgEW+cS+n0NTNGt+s/mAppkpQouCPlHxMwHwuVkDG5uZIL1jhYs20QSV3IOszqD6v1ZcsfyWyphIw==" ></script>
+<script src="/assets/chunk.3524.2e481d31227f9a8f31ff.js" integrity="sha256-Nf8qF5lqNmbTuhaXK7Vyo8dy3xphvaIVBZ820XqSnt8= sha512-SpExil1UADquVxAMR5his7xSmw8YfmgqG1KRtfjL1nfZ8tzesWAQGwrEh/NkkcBtzoDifU8cuaCx3FgHWapnqg==" ></script>
+        <script
+            integrity=""
+            src="/assets/zybooks-web-61e8d13f12f7ecc59322ad6a99823c9c.js"
+        ></script>
+        <script
+            integrity=""
+            src="/assets/ace/ace.js"
+        ></script>
+        <script
+            integrity=""
+            src="/zycommon-web/assets/web-workers/string-diff-4bf5ebb4b800cf1705420016e8da5e4e.js"
+        ></script>
+        <script src="https://js.stripe.com/dahlia/stripe.js"></script>
+
+        
+    </head>
+    <body class="do-not-process-mathjax-2">
+        
+
+        <header class="top-toolbar loading-screen">
+            <div class="logo">
+                <img
+                    alt="zyBooks emblem"
+                    height="22px"
+                    src="/zycommon-web/assets/logo.svg"
+                    width="83px"
+                />
+            </div>
+            <noscript>
+                zyBooks.com requires JavaScript to be enabled, please see our
+                <a
+                    href="https://www.zybooks.com/system-requirements"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                >
+                    FAQ: System Requirements </a
+                >.
+            </noscript>
+        </header>
+
+        <script type="text/javascript">if (window.performance && window.performance.mark) {
+  window.performance.mark('@sentry/ember:initial-load-end');
+}
+</script>
+    </body>
+</html>

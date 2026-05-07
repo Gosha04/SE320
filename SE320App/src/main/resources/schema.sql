@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS cognitive_distortions (
 CREATE TABLE IF NOT EXISTS cognitive_distortion_examples (
     distortion_id VARCHAR(128) NOT NULL,
     example VARCHAR(1000) NOT NULL,
+    PRIMARY KEY (distortion_id, example),
     CONSTRAINT fk_distortion_examples_distortion
         FOREIGN KEY (distortion_id) REFERENCES cognitive_distortions(id)
 );
@@ -83,6 +84,7 @@ CREATE TABLE IF NOT EXISTS diary_entry_emotions (
     diary_entry_id CHAR(36) NOT NULL,
     emotion VARCHAR(255) NOT NULL,
     rating INTEGER,
+    PRIMARY KEY (diary_entry_id, emotion),
     CONSTRAINT fk_diary_emotions_entry
         FOREIGN KEY (diary_entry_id) REFERENCES diary_entries(id)
 );
@@ -135,6 +137,37 @@ CREATE TABLE IF NOT EXISTS trusted_contacts (
     relationship VARCHAR(128) NOT NULL,
     CONSTRAINT fk_trusted_contacts_user
         FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS safety_plans (
+    id CHAR(36) PRIMARY KEY,
+    user_id CHAR(36) NOT NULL UNIQUE,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL,
+    CONSTRAINT fk_safety_plans_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS safety_plan_steps (
+    safety_plan_id CHAR(36) NOT NULL,
+    step_order INTEGER NOT NULL,
+    step TEXT NOT NULL,
+    PRIMARY KEY (safety_plan_id, step_order),
+    CONSTRAINT fk_safety_plan_steps_plan
+        FOREIGN KEY (safety_plan_id) REFERENCES safety_plans(id)
+);
+
+CREATE TABLE IF NOT EXISTS achievements (
+    id CHAR(36) PRIMARY KEY,
+    user_id CHAR(36) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    unlocked BOOLEAN NOT NULL,
+    unlocked_month VARCHAR(32),
+    CONSTRAINT fk_achievements_user
+        FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT uq_achievements_user_title
+        UNIQUE (user_id, title)
 );
 
 CREATE TABLE IF NOT EXISTS coping_strategies (
