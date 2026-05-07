@@ -1,0 +1,3131 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "MindBridge API",
+    "description": "RESTful API for the MindBridge AI-guided CBT platform for workplace burnout recovery. Covers authentication, onboarding, CBT sessions, thought record diary, progress tracking, crisis support, media analysis, personalization, and healthcare integration.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "MindBridge Engineering",
+      "email": "api@mindbridge.health"
+    },
+    "license": {
+      "name": "Proprietary"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.mindbridge.health/v1",
+      "description": "Production"
+    },
+    {
+      "url": "https://staging-api.mindbridge.health/v1",
+      "description": "Staging"
+    }
+  ],
+  "tags": [
+    { "name": "Auth", "description": "Authentication, registration, session management" },
+    { "name": "Onboarding", "description": "Onboarding flow, consent, assessment, personalization" },
+    { "name": "Sessions", "description": "CBT session library, active sessions, history" },
+    { "name": "Chat", "description": "Real-time AI chat within CBT sessions" },
+    { "name": "Scenarios", "description": "Interactive workplace scenarios and thought challenges" },
+    { "name": "Diary", "description": "Thought record diary entries and pattern insights" },
+    { "name": "Progress", "description": "Progress dashboard, mood trends, goals, achievements" },
+    { "name": "Crisis", "description": "Crisis detection, coping strategies, safety plan, emergency resources" },
+    { "name": "Media", "description": "Audio and video upload and emotional analysis" },
+    { "name": "Personalization", "description": "User profile, goals, preferences, AI adaptation" },
+    { "name": "Healthcare", "description": "Therapist integration, FHIR export, progress reports" },
+    { "name": "Audit", "description": "HIPAA audit logs and compliance" }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "operationId": "registerUser",
+        "summary": "Register a new user account",
+        "description": "Creates a new user account with email and password. Returns JWT tokens. Supports US-1.1.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "409": { "$ref": "#/components/responses/Conflict" },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "operationId": "loginUser",
+        "summary": "Authenticate an existing user",
+        "description": "Authenticates user credentials and returns JWT access and refresh tokens. Supports REQ-AUTH-008 session management.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["Auth"],
+        "operationId": "refreshToken",
+        "summary": "Refresh an expired access token",
+        "description": "Exchanges a valid refresh token for a new access token pair. Supports REQ-AUTH-008 idle session timeout.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["refreshToken"],
+                "properties": {
+                  "refreshToken": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tokens refreshed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["Auth"],
+        "operationId": "logoutUser",
+        "summary": "Invalidate the current session",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "204": { "description": "Logged out successfully" }
+        }
+      }
+    },
+    "/onboarding/path": {
+      "post": {
+        "tags": ["Onboarding"],
+        "operationId": "selectOnboardingPath",
+        "summary": "Select onboarding path (self or therapist-referred)",
+        "description": "Persists the user's onboarding path selection. Supports US-1.2 and REQ-AUTH-002.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["path"],
+                "properties": {
+                  "path": {
+                    "type": "string",
+                    "enum": ["self", "therapist_referred"]
+                  },
+                  "referralCode": {
+                    "type": "string",
+                    "description": "Therapist referral code (required when path is therapist_referred)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Path selected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "path": { "type": "string" },
+                    "therapistId": { "type": "string", "nullable": true }
+                  }
+                }
+              }
+            }
+          },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/onboarding/consent": {
+      "get": {
+        "tags": ["Onboarding"],
+        "operationId": "getConsentItems",
+        "summary": "Get required consent items",
+        "description": "Returns the list of consent items (HIPAA, data ownership, AI processing, crisis protocols) with their descriptions. Supports US-1.3.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Consent items retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/ConsentItem" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Onboarding"],
+        "operationId": "submitConsent",
+        "summary": "Submit consent acknowledgments",
+        "description": "Records the user's consent for each required item. All items must be accepted. Supports US-1.3 and REQ-AUTH-003/004.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["consents"],
+                "properties": {
+                  "consents": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["itemId", "accepted"],
+                      "properties": {
+                        "itemId": { "type": "string" },
+                        "accepted": { "type": "boolean" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Consent recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "allAccepted": { "type": "boolean" },
+                    "consentedAt": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/onboarding/assessment": {
+      "get": {
+        "tags": ["Onboarding"],
+        "operationId": "getAssessmentQuestions",
+        "summary": "Get burnout assessment questions",
+        "description": "Returns the 5-question burnout assessment covering exhaustion, efficacy, cynicism, cognitive function, and detachment. Supports US-1.4 and REQ-PER-001.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Assessment questions retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "questions": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/AssessmentQuestion" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Onboarding"],
+        "operationId": "submitAssessment",
+        "summary": "Submit burnout assessment responses",
+        "description": "Submits all 5 assessment answers and returns computed burnout score with severity classification. Supports US-1.4, US-1.6, and REQ-PER-002.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["responses"],
+                "properties": {
+                  "responses": {
+                    "type": "array",
+                    "minItems": 5,
+                    "maxItems": 5,
+                    "items": {
+                      "type": "object",
+                      "required": ["questionId", "rating"],
+                      "properties": {
+                        "questionId": { "type": "string" },
+                        "rating": { "type": "integer", "minimum": 1, "maximum": 5 }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Assessment submitted and scored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssessmentResult"
+                }
+              }
+            }
+          },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/onboarding/personalization": {
+      "post": {
+        "tags": ["Onboarding"],
+        "operationId": "submitPersonalization",
+        "summary": "Submit profile personalization preferences",
+        "description": "Saves the user's name, selected recovery goals, and preferred session time. Supports US-1.5 and REQ-PER-003/004.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PersonalizationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Personalization saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonalizationResponse"
+                }
+              }
+            }
+          },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/onboarding/complete": {
+      "post": {
+        "tags": ["Onboarding"],
+        "operationId": "completeOnboarding",
+        "summary": "Mark onboarding as complete",
+        "description": "Marks the user's onboarding as complete and activates the main dashboard. Supports US-1.6.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Onboarding completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "onboardingComplete": { "type": "boolean" },
+                    "completedAt": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions": {
+      "get": {
+        "tags": ["Sessions"],
+        "operationId": "getSessionLibrary",
+        "summary": "Get the session library with modules and statuses",
+        "description": "Returns all sessions grouped by module with status indicators. Supports US-2.1 and REQ-CBT-001/002/003.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Session library retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "modules": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/SessionModule" }
+                    },
+                    "progress": { "$ref": "#/components/schemas/SessionProgress" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{sessionId}": {
+      "get": {
+        "tags": ["Sessions"],
+        "operationId": "getSessionDetails",
+        "summary": "Get session introduction and details",
+        "description": "Returns session title, duration, objectives, modalities, and description. Supports US-2.2 and REQ-CBT-004.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session details retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionDetail"
+                }
+              }
+            }
+          },
+          "403": { "description": "Session is locked" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/sessions/{sessionId}/start": {
+      "post": {
+        "tags": ["Sessions"],
+        "operationId": "startSession",
+        "summary": "Start a CBT session",
+        "description": "Initiates a new active session instance. Returns the session instance ID and initial AI greeting. Supports US-2.3 and REQ-CBT-005.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Session started",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActiveSession"
+                }
+              }
+            }
+          },
+          "403": { "description": "Session is locked" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/sessions/{sessionId}/end": {
+      "post": {
+        "tags": ["Sessions"],
+        "operationId": "endSession",
+        "summary": "End a session (early or on completion)",
+        "description": "Ends the active session and generates the completion summary. Supports US-2.8, US-2.11, and REQ-CBT-012/015.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string",
+                    "enum": ["completed", "early_exit"],
+                    "default": "completed"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Session ended, summary generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionSummary"
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/sessions/{sessionId}/summary": {
+      "get": {
+        "tags": ["Sessions"],
+        "operationId": "getSessionSummary",
+        "summary": "Get session completion summary",
+        "description": "Returns the full session summary with insights, transcript, distortions, emotional arc, and homework. Supports US-2.8 and REQ-CBT-012.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session summary retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionSummary"
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/sessions/{sessionId}/progress": {
+      "get": {
+        "tags": ["Sessions"],
+        "operationId": "getSessionProgress",
+        "summary": "Get in-session progress tracker state",
+        "description": "Returns current step, total steps, and completed step list. Supports US-2.7 and REQ-CBT-011.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Progress retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InSessionProgress"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/history": {
+      "get": {
+        "tags": ["Sessions"],
+        "operationId": "getSessionHistory",
+        "summary": "Get session history log",
+        "description": "Returns all completed sessions with date, title, duration, and mood change. Supports US-2.9 and REQ-CBT-013.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20, "maximum": 50 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session history retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sessions": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/SessionHistoryEntry" }
+                    },
+                    "pagination": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{sessionId}/chat": {
+      "get": {
+        "tags": ["Chat"],
+        "operationId": "getChatMessages",
+        "summary": "Get chat messages for a session",
+        "description": "Returns the full chat transcript for the active or completed session. Supports US-2.3 and REQ-CBT-005/006.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "description": "Cursor for pagination (message ID)",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chat messages retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "messages": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/ChatMessage" }
+                    },
+                    "hasMore": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Chat"],
+        "operationId": "sendChatMessage",
+        "summary": "Send a text message in the AI chat",
+        "description": "Sends a user text message and returns the AI therapist response. Supports US-2.3, US-2.10, and REQ-CBT-005/006.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["content"],
+                "properties": {
+                  "content": { "type": "string", "maxLength": 5000 },
+                  "modality": {
+                    "type": "string",
+                    "enum": ["text", "voice_transcript", "video_transcript"],
+                    "default": "text"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "AI response generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/sessions/{sessionId}/chat/stream": {
+      "post": {
+        "tags": ["Chat"],
+        "operationId": "streamChatMessage",
+        "summary": "Send a message and stream the AI response (SSE)",
+        "description": "Sends a user message and streams the AI therapist response in real time via Server-Sent Events. Supports US-2.3 typing indicator and real-time delivery.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["content"],
+                "properties": {
+                  "content": { "type": "string", "maxLength": 5000 },
+                  "modality": {
+                    "type": "string",
+                    "enum": ["text", "voice_transcript", "video_transcript"],
+                    "default": "text"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Streamed AI response (SSE)",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "Server-Sent Event stream with data chunks"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{sessionId}/scenarios": {
+      "get": {
+        "tags": ["Scenarios"],
+        "operationId": "getScenarios",
+        "summary": "Get interactive workplace scenarios for a session",
+        "description": "Returns the set of workplace scenarios with response options. Supports US-2.5 and REQ-CBT-008.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Scenarios retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "scenarios": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Scenario" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{sessionId}/scenarios/{scenarioId}/respond": {
+      "post": {
+        "tags": ["Scenarios"],
+        "operationId": "submitScenarioResponse",
+        "summary": "Submit a response to a workplace scenario",
+        "description": "Submits the user's selected response and returns feedback. Supports US-2.5 and REQ-CBT-008/009.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          },
+          {
+            "name": "scenarioId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["selectedOptionId"],
+                "properties": {
+                  "selectedOptionId": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Scenario feedback returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioFeedback"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{sessionId}/scenarios/score": {
+      "get": {
+        "tags": ["Scenarios"],
+        "operationId": "getScenarioScore",
+        "summary": "Get scenario set score summary",
+        "description": "Returns the score summary for all scenarios in the session. Supports US-2.5 and REQ-CBT-009.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Score summary retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "correct": { "type": "integer" },
+                    "total": { "type": "integer" },
+                    "percentage": { "type": "number" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{sessionId}/thought-challenge": {
+      "get": {
+        "tags": ["Scenarios"],
+        "operationId": "getThoughtChallenge",
+        "summary": "Get thought challenge exercise state",
+        "description": "Returns the current state of the structured thought challenge. Supports US-2.6 and REQ-CBT-010.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thought challenge state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThoughtChallenge"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Scenarios"],
+        "operationId": "submitThoughtChallenge",
+        "summary": "Submit a thought challenge step",
+        "description": "Submits one step of the thought challenge (thought, evidence, alternative, belief rating). Supports US-2.6 and REQ-CBT-010.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "sessionId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThoughtChallengeSubmission"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Step submitted, AI feedback returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThoughtChallengeFeedback"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/diary/entries": {
+      "get": {
+        "tags": ["Diary"],
+        "operationId": "getDiaryEntries",
+        "summary": "List all diary entries",
+        "description": "Returns all thought record diary entries with date, mood shift, emotions, and distortion tags. Supports US-3.1 and REQ-DRY-001.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20, "maximum": 50 }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["date_desc", "date_asc", "mood_change"], "default": "date_desc" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Diary entries retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "entries": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/DiaryEntrySummary" }
+                    },
+                    "pagination": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Diary"],
+        "operationId": "createDiaryEntry",
+        "summary": "Create a new diary entry",
+        "description": "Submits the complete diary entry (mood, situation, thoughts, emotions, distortions, reframe, belief rating). Supports US-3.2 through US-3.7 and REQ-DRY-002 through DRY-007.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiaryEntryCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Diary entry created with AI insights",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryEntryCreateResponse"
+                }
+              }
+            }
+          },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/diary/entries/{entryId}": {
+      "get": {
+        "tags": ["Diary"],
+        "operationId": "getDiaryEntry",
+        "summary": "Get diary entry detail with AI analysis",
+        "description": "Returns the full diary entry with overview, AI-guided transcript, and AI analysis tabs. Supports US-3.9 and REQ-DRY-009.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "entryId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Diary entry detail retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryEntryDetail"
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Diary"],
+        "operationId": "deleteDiaryEntry",
+        "summary": "Delete a diary entry",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "entryId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Entry deleted" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/diary/distortions": {
+      "get": {
+        "tags": ["Diary"],
+        "operationId": "getCognitiveDistortions",
+        "summary": "Get list of cognitive distortions",
+        "description": "Returns all cognitive distortion types with descriptions. Supports US-3.5 and REQ-DRY-005.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Distortions list retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "distortions": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/CognitiveDistortion" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/diary/distortions/suggest": {
+      "post": {
+        "tags": ["Diary"],
+        "operationId": "suggestDistortions",
+        "summary": "AI-suggest likely distortions from a thought",
+        "description": "Analyzes an automatic thought and returns suggested cognitive distortions. Supports US-3.5 and REQ-DRY-005.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["thought"],
+                "properties": {
+                  "thought": { "type": "string", "maxLength": 2000 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Suggested distortions returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "suggestions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "distortionId": { "type": "string" },
+                          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+                          "reasoning": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/diary/reframe/prompts": {
+      "post": {
+        "tags": ["Diary"],
+        "operationId": "getReframePrompts",
+        "summary": "Get AI-generated reframing prompts",
+        "description": "Given an automatic thought and identified distortions, returns AI-generated guiding prompts for cognitive restructuring. Supports US-3.6 and REQ-DRY-006.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["thought", "distortionIds"],
+                "properties": {
+                  "thought": { "type": "string" },
+                  "distortionIds": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reframing prompts generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "prompts": {
+                      "type": "array",
+                      "items": { "type": "string" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/diary/insights": {
+      "get": {
+        "tags": ["Diary"],
+        "operationId": "getDiaryInsights",
+        "summary": "Get pattern insights across all diary entries",
+        "description": "Returns aggregated mood trends, top emotions, top distortions, and AI narrative analysis. Supports US-3.8 and REQ-DRY-008.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Pattern insights retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryInsights"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/progress/weekly": {
+      "get": {
+        "tags": ["Progress"],
+        "operationId": "getWeeklyProgress",
+        "summary": "Get weekly progress dashboard data",
+        "description": "Returns key stats, weekly mood chart, burnout recovery score, and weekly goals. Supports US-4.1 through US-4.4 and REQ-PER-007.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "weekOf",
+            "in": "query",
+            "description": "ISO date for the week to query (defaults to current week)",
+            "schema": { "type": "string", "format": "date" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Weekly progress data retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeeklyProgress"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/progress/monthly": {
+      "get": {
+        "tags": ["Progress"],
+        "operationId": "getMonthlyProgress",
+        "summary": "Get monthly trends, heatmap, and AI insights",
+        "description": "Returns mood trend, burnout trend, activity heatmap, and AI narrative insights. Supports US-4.5.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "description": "ISO month (YYYY-MM) to query (defaults to current month)",
+            "schema": { "type": "string", "pattern": "^\\d{4}-\\d{2}$" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Monthly progress data retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MonthlyProgress"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/progress/burnout": {
+      "get": {
+        "tags": ["Progress"],
+        "operationId": "getBurnoutRecovery",
+        "summary": "Get burnout recovery score with sub-dimensions",
+        "description": "Returns overall recovery percentage and Exhaustion, Cynicism, Efficacy breakdowns with weekly changes. Supports US-4.3.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Burnout recovery data retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BurnoutRecovery"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/progress/achievements": {
+      "get": {
+        "tags": ["Progress"],
+        "operationId": "getAchievements",
+        "summary": "Get achievements with unlock status",
+        "description": "Returns all achievements with locked/unlocked state and encouragement. Supports US-4.6, US-4.7, and REQ-PER-008.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Achievements retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "achievements": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Achievement" }
+                    },
+                    "encouragement": { "$ref": "#/components/schemas/Encouragement" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/progress/goals": {
+      "get": {
+        "tags": ["Progress"],
+        "operationId": "getWeeklyGoals",
+        "summary": "Get weekly goal tracking data",
+        "description": "Returns weekly goals with current progress and targets. Supports US-4.4 and REQ-PER-007.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Weekly goals retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "goals": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/WeeklyGoal" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crisis": {
+      "get": {
+        "tags": ["Crisis"],
+        "operationId": "getCrisisHub",
+        "summary": "Get crisis support hub data",
+        "description": "Returns crisis awareness content, pathways, and 988 call action. Supports US-5.1 and REQ-CRS-001/002.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Crisis hub data retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrisisHub"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crisis/coping-strategies": {
+      "get": {
+        "tags": ["Crisis"],
+        "operationId": "getCopingStrategies",
+        "summary": "Get guided coping exercises",
+        "description": "Returns coping strategy cards (breathing, grounding, PMR) with exercise configurations. Supports US-5.2 and REQ-CRS-003/004/005.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Coping strategies retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "strategies": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/CopingStrategy" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crisis/coping-strategies/{strategyId}/complete": {
+      "post": {
+        "tags": ["Crisis"],
+        "operationId": "completeCopingExercise",
+        "summary": "Record completion of a coping exercise",
+        "description": "Logs that the user completed a breathing, grounding, or relaxation exercise. Supports REQ-CRS-003/004.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "strategyId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "durationSeconds": { "type": "integer" },
+                  "completedCycles": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Exercise completion recorded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" },
+                    "totalExercisesCompleted": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crisis/emergency-resources": {
+      "get": {
+        "tags": ["Crisis"],
+        "operationId": "getEmergencyResources",
+        "summary": "Get emergency contacts and hotlines",
+        "description": "Returns crisis hotlines, therapist contact, and trusted personal contacts. Supports US-5.3 and REQ-CRS-006/007.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Emergency resources retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmergencyResources"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crisis/trusted-contacts": {
+      "get": {
+        "tags": ["Crisis"],
+        "operationId": "getTrustedContacts",
+        "summary": "Get user's trusted contacts",
+        "description": "Returns the user's saved trusted personal contacts for crisis situations. Supports US-5.3 and REQ-CRS-007.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Trusted contacts retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "contacts": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/TrustedContact" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Crisis"],
+        "operationId": "addTrustedContact",
+        "summary": "Add a trusted contact",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrustedContactCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Contact added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrustedContact"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crisis/trusted-contacts/{contactId}": {
+      "delete": {
+        "tags": ["Crisis"],
+        "operationId": "deleteTrustedContact",
+        "summary": "Remove a trusted contact",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Contact removed" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/crisis/safety-plan": {
+      "get": {
+        "tags": ["Crisis"],
+        "operationId": "getSafetyPlan",
+        "summary": "Get personalized safety plan",
+        "description": "Returns the 6-step safety plan with warning signs, coping strategies, contacts, resources, and environment safety. Supports US-5.4 and REQ-CRS-008/009.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Safety plan retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SafetyPlan"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Crisis"],
+        "operationId": "updateSafetyPlan",
+        "summary": "Update the personalized safety plan",
+        "description": "Updates one or more steps of the safety plan. Supports US-5.4.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SafetyPlanUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Safety plan updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SafetyPlan"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/crisis/detect": {
+      "post": {
+        "tags": ["Crisis"],
+        "operationId": "detectCrisis",
+        "summary": "Analyze text for crisis indicators",
+        "description": "Scans user input for crisis keywords and sentiment patterns. Returns risk level and recommended action. Supports REQ-CRS-010.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["text"],
+                "properties": {
+                  "text": { "type": "string" },
+                  "sessionId": { "type": "string", "format": "uuid" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Crisis analysis result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CrisisDetectionResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/media/audio/upload": {
+      "post": {
+        "tags": ["Media"],
+        "operationId": "uploadAudio",
+        "summary": "Upload an audio recording",
+        "description": "Uploads audio from a voice-modality session for transcription and emotional analysis. Supports US-2.4 and REQ-AIA-001.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file", "sessionId"],
+                "properties": {
+                  "file": { "type": "string", "format": "binary" },
+                  "sessionId": { "type": "string", "format": "uuid" },
+                  "durationMs": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Audio uploaded and queued for processing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaUploadResponse"
+                }
+              }
+            }
+          },
+          "413": { "description": "File too large" }
+        }
+      }
+    },
+    "/media/audio/{mediaId}/analysis": {
+      "get": {
+        "tags": ["Media"],
+        "operationId": "getAudioAnalysis",
+        "summary": "Get emotional analysis of an audio recording",
+        "description": "Returns vocal tone, pace, pitch analysis, and detected emotional indicators. Supports REQ-AIA-002.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audio analysis retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioAnalysis"
+                }
+              }
+            }
+          },
+          "202": { "description": "Analysis still processing" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/media/video/upload": {
+      "post": {
+        "tags": ["Media"],
+        "operationId": "uploadVideo",
+        "summary": "Upload a video recording",
+        "description": "Uploads video from a video-modality session for facial expression analysis. Supports US-2.4 and REQ-AIA-003.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["file", "sessionId"],
+                "properties": {
+                  "file": { "type": "string", "format": "binary" },
+                  "sessionId": { "type": "string", "format": "uuid" },
+                  "durationMs": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Video uploaded and queued for processing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaUploadResponse"
+                }
+              }
+            }
+          },
+          "413": { "description": "File too large" }
+        }
+      }
+    },
+    "/media/video/{mediaId}/analysis": {
+      "get": {
+        "tags": ["Media"],
+        "operationId": "getVideoAnalysis",
+        "summary": "Get facial expression analysis of a video recording",
+        "description": "Returns detected facial expressions and emotional states. Supports REQ-AIA-004.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "mediaId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Video analysis retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoAnalysis"
+                }
+              }
+            }
+          },
+          "202": { "description": "Analysis still processing" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "tags": ["Personalization"],
+        "operationId": "getCurrentUser",
+        "summary": "Get current user profile",
+        "description": "Returns the authenticated user's profile including name, goals, preferences, severity level, and onboarding status.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "User profile retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfile"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Personalization"],
+        "operationId": "updateUserProfile",
+        "summary": "Update user profile and preferences",
+        "description": "Updates the user's name, goals, preferred session time, or other profile fields. Supports REQ-PER-003/004/006.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserProfileUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfile"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me/data-export": {
+      "post": {
+        "tags": ["Personalization"],
+        "operationId": "exportUserData",
+        "summary": "Export all personal data",
+        "description": "Generates a complete export of the user's data in JSON format. Supports REQ-AUTH-007.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "202": {
+            "description": "Export initiated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exportId": { "type": "string", "format": "uuid" },
+                    "status": { "type": "string", "enum": ["processing", "ready"] },
+                    "downloadUrl": { "type": "string", "format": "uri", "nullable": true }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me/data-export/{exportId}": {
+      "get": {
+        "tags": ["Personalization"],
+        "operationId": "getDataExportStatus",
+        "summary": "Check data export status and download",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "exportId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Export status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exportId": { "type": "string", "format": "uuid" },
+                    "status": { "type": "string", "enum": ["processing", "ready", "expired"] },
+                    "downloadUrl": { "type": "string", "format": "uri", "nullable": true },
+                    "expiresAt": { "type": "string", "format": "date-time", "nullable": true }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me/delete": {
+      "delete": {
+        "tags": ["Personalization"],
+        "operationId": "deleteUserAccount",
+        "summary": "Delete user account and all data",
+        "description": "Permanently deletes the user account and all associated data. Supports REQ-AUTH-007.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["confirmPhrase"],
+                "properties": {
+                  "confirmPhrase": {
+                    "type": "string",
+                    "description": "Must be 'DELETE MY ACCOUNT' to confirm"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "Account and all data permanently deleted" },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/healthcare/therapist": {
+      "get": {
+        "tags": ["Healthcare"],
+        "operationId": "getAssignedTherapist",
+        "summary": "Get assigned therapist details",
+        "description": "Returns the user's assigned therapist profile. Supports REQ-HCI-001/002.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Therapist details retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Therapist"
+                }
+              }
+            }
+          },
+          "404": { "description": "No therapist assigned" }
+        }
+      }
+    },
+    "/healthcare/progress-report": {
+      "post": {
+        "tags": ["Healthcare"],
+        "operationId": "generateProgressReport",
+        "summary": "Generate a structured progress report for healthcare provider",
+        "description": "Generates a clinical progress report with burnout trends, session stats, and distortion frequency. Supports REQ-HCI-003.",
+        "security": [{ "BearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "dateFrom": { "type": "string", "format": "date" },
+                  "dateTo": { "type": "string", "format": "date" },
+                  "format": {
+                    "type": "string",
+                    "enum": ["json", "pdf"],
+                    "default": "json"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Progress report generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressReport"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/healthcare/fhir/observations": {
+      "get": {
+        "tags": ["Healthcare"],
+        "operationId": "getFhirObservations",
+        "summary": "Export assessment data in FHIR Observation format",
+        "description": "Returns clinical assessment results in HL7 FHIR-compatible Observation resources. Supports REQ-HCI-006.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "dateFrom",
+            "in": "query",
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "dateTo",
+            "in": "query",
+            "schema": { "type": "string", "format": "date" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "FHIR Observations returned",
+            "content": {
+              "application/fhir+json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "resourceType": { "type": "string", "const": "Bundle" },
+                    "type": { "type": "string", "const": "searchset" },
+                    "entry": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "description": "FHIR Observation resource"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/healthcare/therapist/patients": {
+      "get": {
+        "tags": ["Healthcare"],
+        "operationId": "getTherapistPatients",
+        "summary": "Get therapist's assigned patients (therapist role)",
+        "description": "Returns a list of assigned patients with progress summaries and risk indicators. Supports REQ-HCI-005.",
+        "security": [{ "BearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Patient list retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "patients": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/PatientSummary" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": { "description": "Insufficient permissions (therapist role required)" }
+        }
+      }
+    },
+    "/audit/logs": {
+      "get": {
+        "tags": ["Audit"],
+        "operationId": "getAuditLogs",
+        "summary": "Get HIPAA audit logs",
+        "description": "Returns audit log entries for data access events. Supports REQ-AUTH-006 and REQ-CRS-011.",
+        "security": [{ "BearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "dateFrom",
+            "in": "query",
+            "schema": { "type": "string", "format": "date-time" }
+          },
+          {
+            "name": "dateTo",
+            "in": "query",
+            "schema": { "type": "string", "format": "date-time" }
+          },
+          {
+            "name": "actionType",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["login", "data_read", "data_write", "data_export", "data_delete", "crisis_access"]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 50, "maximum": 100 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audit logs retrieved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "logs": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/AuditLogEntry" }
+                    },
+                    "pagination": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          },
+          "403": { "description": "Insufficient permissions" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Authentication required or invalid credentials",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "Resource already exists",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "Request validation failed",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ValidationError" }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" }
+        }
+      },
+      "ValidationError": {
+        "type": "object",
+        "required": ["code", "message", "errors"],
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": { "type": "string" },
+                "message": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "total": { "type": "integer" },
+          "totalPages": { "type": "integer" }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "minLength": 8 }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string" }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": { "type": "string" },
+          "refreshToken": { "type": "string" },
+          "expiresIn": { "type": "integer", "description": "Token lifetime in seconds" },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "format": "uuid" },
+              "email": { "type": "string", "format": "email" },
+              "onboardingComplete": { "type": "boolean" }
+            }
+          }
+        }
+      },
+      "ConsentItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "category": { "type": "string", "enum": ["hipaa", "data_ownership", "ai_processing", "crisis_protocols"] },
+          "required": { "type": "boolean" }
+        }
+      },
+      "AssessmentQuestion": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "dimension": { "type": "string", "enum": ["exhaustion", "efficacy", "cynicism", "cognitive_function", "detachment"] },
+          "text": { "type": "string" },
+          "scaleMin": { "type": "integer" },
+          "scaleMax": { "type": "integer" },
+          "scaleLabels": {
+            "type": "object",
+            "properties": {
+              "min": { "type": "string" },
+              "max": { "type": "string" }
+            }
+          }
+        }
+      },
+      "AssessmentResult": {
+        "type": "object",
+        "properties": {
+          "totalScore": { "type": "integer", "minimum": 5, "maximum": 25 },
+          "severityLevel": { "type": "string", "enum": ["mild", "moderate", "significant"] },
+          "dimensions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "dimension": { "type": "string" },
+                "score": { "type": "integer", "minimum": 1, "maximum": 5 }
+              }
+            }
+          },
+          "assessedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "PersonalizationRequest": {
+        "type": "object",
+        "required": ["name", "goals"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "goals": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "enum": ["reduce_stress", "better_sleep", "manage_anxiety", "improve_focus", "build_resilience", "work_life_balance"]
+            }
+          },
+          "preferredSessionTime": {
+            "type": "string",
+            "enum": ["morning", "afternoon", "evening"]
+          }
+        }
+      },
+      "PersonalizationResponse": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "goals": { "type": "array", "items": { "type": "string" } },
+          "preferredSessionTime": { "type": "string" },
+          "recoveryPlan": {
+            "type": "object",
+            "properties": {
+              "severityLevel": { "type": "string" },
+              "recommendedSessionsPerWeek": { "type": "integer" },
+              "focusAreas": { "type": "array", "items": { "type": "string" } },
+              "estimatedDurationWeeks": { "type": "integer" }
+            }
+          }
+        }
+      },
+      "SessionModule": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string", "enum": ["Foundation", "Core Skills", "Application", "Advanced", "Open Sessions"] },
+          "sessions": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SessionListItem" }
+          }
+        }
+      },
+      "SessionListItem": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "subtitle": { "type": "string" },
+          "durationMinutes": { "type": "integer" },
+          "status": { "type": "string", "enum": ["completed", "current", "available", "locked"] },
+          "completedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "badge": { "type": "string", "nullable": true, "description": "e.g. 'Open' for General Discussion" }
+        }
+      },
+      "SessionProgress": {
+        "type": "object",
+        "properties": {
+          "completed": { "type": "integer" },
+          "total": { "type": "integer" },
+          "percentage": { "type": "number" }
+        }
+      },
+      "SessionDetail": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "durationMinutes": { "type": "integer" },
+          "objectives": { "type": "array", "items": { "type": "string" } },
+          "modalities": { "type": "array", "items": { "type": "string", "enum": ["text", "voice", "video"] } },
+          "module": { "type": "string" },
+          "status": { "type": "string" }
+        }
+      },
+      "ActiveSession": {
+        "type": "object",
+        "properties": {
+          "instanceId": { "type": "string", "format": "uuid" },
+          "sessionId": { "type": "string", "format": "uuid" },
+          "startedAt": { "type": "string", "format": "date-time" },
+          "initialMessage": { "$ref": "#/components/schemas/ChatMessage" },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "stepNumber": { "type": "integer" },
+                "type": { "type": "string", "enum": ["chat", "scenario", "thought_challenge", "summary"] },
+                "label": { "type": "string" },
+                "status": { "type": "string", "enum": ["pending", "active", "completed"] }
+              }
+            }
+          }
+        }
+      },
+      "InSessionProgress": {
+        "type": "object",
+        "properties": {
+          "currentStep": { "type": "integer" },
+          "totalSteps": { "type": "integer" },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "stepNumber": { "type": "integer" },
+                "label": { "type": "string" },
+                "status": { "type": "string", "enum": ["pending", "active", "completed"] }
+              }
+            }
+          }
+        }
+      },
+      "SessionSummary": {
+        "type": "object",
+        "properties": {
+          "sessionId": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "completedAt": { "type": "string", "format": "date-time" },
+          "durationMinutes": { "type": "integer" },
+          "completionStatus": { "type": "string", "enum": ["completed", "partial"] },
+          "insights": {
+            "type": "object",
+            "properties": {
+              "keyInsights": { "type": "array", "items": { "type": "string" } },
+              "identifiedDistortions": { "type": "array", "items": { "type": "string" } },
+              "emotionalArc": {
+                "type": "object",
+                "properties": {
+                  "startMood": { "type": "integer" },
+                  "endMood": { "type": "integer" }
+                }
+              },
+              "techniquesPracticed": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "transcript": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ChatMessage" }
+          },
+          "homework": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": { "type": "string" },
+                "description": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "SessionHistoryEntry": {
+        "type": "object",
+        "properties": {
+          "sessionId": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "completedAt": { "type": "string", "format": "date-time" },
+          "durationMinutes": { "type": "integer" },
+          "moodChange": { "type": "integer", "description": "Mood difference (end - start)" }
+        }
+      },
+      "ChatMessage": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "role": { "type": "string", "enum": ["user", "assistant", "system"] },
+          "content": { "type": "string" },
+          "modality": { "type": "string", "enum": ["text", "voice_transcript", "video_transcript"] },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "mediaId": { "type": "string", "format": "uuid", "nullable": true, "description": "Reference to uploaded media if voice/video" }
+        }
+      },
+      "ChatResponse": {
+        "type": "object",
+        "properties": {
+          "userMessage": { "$ref": "#/components/schemas/ChatMessage" },
+          "assistantMessage": { "$ref": "#/components/schemas/ChatMessage" },
+          "crisisDetected": { "type": "boolean", "description": "Whether crisis keywords were detected in the user message" }
+        }
+      },
+      "Scenario": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "order": { "type": "integer" },
+          "description": { "type": "string" },
+          "context": { "type": "string" },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "text": { "type": "string" },
+                "type": { "type": "string", "enum": ["helpful", "unhelpful"] }
+              }
+            }
+          }
+        }
+      },
+      "ScenarioFeedback": {
+        "type": "object",
+        "properties": {
+          "scenarioId": { "type": "string", "format": "uuid" },
+          "selectedOptionId": { "type": "string" },
+          "isCorrect": { "type": "boolean" },
+          "explanation": { "type": "string" },
+          "distortionType": { "type": "string", "nullable": true }
+        }
+      },
+      "ThoughtChallenge": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "currentStep": { "type": "string", "enum": ["identify_thought", "examine_evidence", "generate_alternative", "rate_belief", "completed"] },
+          "automaticThought": { "type": "string", "nullable": true },
+          "evidenceFor": { "type": "string", "nullable": true },
+          "evidenceAgainst": { "type": "string", "nullable": true },
+          "balancedAlternative": { "type": "string", "nullable": true },
+          "beliefRating": { "type": "integer", "minimum": 0, "maximum": 100, "nullable": true }
+        }
+      },
+      "ThoughtChallengeSubmission": {
+        "type": "object",
+        "required": ["step"],
+        "properties": {
+          "step": { "type": "string", "enum": ["identify_thought", "examine_evidence", "generate_alternative", "rate_belief"] },
+          "automaticThought": { "type": "string" },
+          "evidenceFor": { "type": "string" },
+          "evidenceAgainst": { "type": "string" },
+          "balancedAlternative": { "type": "string" },
+          "beliefRating": { "type": "integer", "minimum": 0, "maximum": 100 }
+        }
+      },
+      "ThoughtChallengeFeedback": {
+        "type": "object",
+        "properties": {
+          "step": { "type": "string" },
+          "feedback": { "type": "string" },
+          "nextStep": { "type": "string", "nullable": true },
+          "isComplete": { "type": "boolean" }
+        }
+      },
+      "DiaryEntrySummary": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "moodBefore": { "type": "integer", "minimum": 1, "maximum": 10 },
+          "moodAfter": { "type": "integer", "minimum": 1, "maximum": 10 },
+          "emotions": { "type": "array", "items": { "type": "string" } },
+          "distortions": { "type": "array", "items": { "type": "string" } },
+          "situationPreview": { "type": "string", "description": "Truncated first 100 chars of situation" }
+        }
+      },
+      "DiaryEntryCreate": {
+        "type": "object",
+        "required": ["moodBefore", "situation", "automaticThought", "emotions", "distortionIds", "balancedThought", "beliefRating", "moodAfter"],
+        "properties": {
+          "moodBefore": { "type": "integer", "minimum": 1, "maximum": 10 },
+          "situation": {
+            "type": "object",
+            "required": ["description"],
+            "properties": {
+              "description": { "type": "string", "maxLength": 5000 },
+              "timeOfDay": { "type": "string" },
+              "location": { "type": "string" }
+            }
+          },
+          "automaticThought": { "type": "string", "maxLength": 2000 },
+          "emotions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["name", "intensity"],
+              "properties": {
+                "name": { "type": "string" },
+                "intensity": { "type": "integer", "minimum": 1, "maximum": 10 }
+              }
+            }
+          },
+          "distortionIds": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+          "balancedThought": { "type": "string", "maxLength": 2000 },
+          "beliefRating": { "type": "integer", "minimum": 0, "maximum": 100 },
+          "moodAfter": { "type": "integer", "minimum": 1, "maximum": 10 }
+        }
+      },
+      "DiaryEntryCreateResponse": {
+        "type": "object",
+        "properties": {
+          "entry": { "$ref": "#/components/schemas/DiaryEntrySummary" },
+          "moodChange": {
+            "type": "object",
+            "properties": {
+              "before": { "type": "integer" },
+              "after": { "type": "integer" },
+              "direction": { "type": "string", "enum": ["improved", "declined", "unchanged"] }
+            }
+          },
+          "aiInsights": {
+            "type": "object",
+            "properties": {
+              "primaryDistortion": { "type": "string" },
+              "triggerPattern": { "type": "string" },
+              "encouragement": { "type": "string" }
+            }
+          }
+        }
+      },
+      "DiaryEntryDetail": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "moodBefore": { "type": "integer" },
+          "moodAfter": { "type": "integer" },
+          "situation": {
+            "type": "object",
+            "properties": {
+              "description": { "type": "string" },
+              "timeOfDay": { "type": "string" },
+              "location": { "type": "string" }
+            }
+          },
+          "automaticThought": { "type": "string" },
+          "emotions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "intensity": { "type": "integer" }
+              }
+            }
+          },
+          "distortions": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CognitiveDistortion" }
+          },
+          "balancedThought": { "type": "string" },
+          "beliefRating": { "type": "integer" },
+          "aiAnalysis": {
+            "type": "object",
+            "properties": {
+              "summary": { "type": "string" },
+              "insights": { "type": "array", "items": { "type": "string" } },
+              "recommendations": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      },
+      "CognitiveDistortion": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "examples": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "DiaryInsights": {
+        "type": "object",
+        "properties": {
+          "totalEntries": { "type": "integer" },
+          "sufficientData": { "type": "boolean" },
+          "moodTrend": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": { "type": "string", "format": "date" },
+                "averageMood": { "type": "number" }
+              }
+            }
+          },
+          "topEmotions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "count": { "type": "integer" },
+                "percentage": { "type": "number" }
+              }
+            }
+          },
+          "topDistortions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "count": { "type": "integer" },
+                "percentage": { "type": "number" }
+              }
+            }
+          },
+          "aiNarrative": { "type": "string", "description": "AI-generated pattern analysis narrative" }
+        }
+      },
+      "WeeklyProgress": {
+        "type": "object",
+        "properties": {
+          "weekOf": { "type": "string", "format": "date" },
+          "stats": {
+            "type": "object",
+            "properties": {
+              "streak": { "type": "integer" },
+              "sessionsCompleted": { "type": "integer" },
+              "diaryEntries": { "type": "integer" },
+              "weeklyChange": {
+                "type": "object",
+                "properties": {
+                  "streak": { "type": "integer" },
+                  "sessions": { "type": "integer" },
+                  "entries": { "type": "integer" }
+                }
+              }
+            }
+          },
+          "moodChart": {
+            "type": "object",
+            "properties": {
+              "days": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "date": { "type": "string", "format": "date" },
+                    "dayLabel": { "type": "string" },
+                    "mood": { "type": "number", "nullable": true }
+                  }
+                }
+              },
+              "weeklyAverage": { "type": "number" },
+              "previousWeekAverage": { "type": "number" },
+              "changePercent": { "type": "number" }
+            }
+          },
+          "burnoutRecovery": { "$ref": "#/components/schemas/BurnoutRecovery" },
+          "goals": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/WeeklyGoal" }
+          }
+        }
+      },
+      "MonthlyProgress": {
+        "type": "object",
+        "properties": {
+          "month": { "type": "string" },
+          "sufficientData": { "type": "boolean" },
+          "moodTrend": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": { "type": "string", "format": "date" },
+                "mood": { "type": "number" }
+              }
+            }
+          },
+          "burnoutTrend": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": { "type": "string", "format": "date" },
+                "score": { "type": "number" }
+              }
+            }
+          },
+          "activityHeatmap": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": { "type": "string", "format": "date" },
+                "activityLevel": { "type": "integer", "minimum": 0, "maximum": 4 }
+              }
+            }
+          },
+          "aiInsights": { "type": "array", "items": { "type": "string" } },
+          "insufficientDataMessage": { "type": "string", "nullable": true }
+        }
+      },
+      "BurnoutRecovery": {
+        "type": "object",
+        "properties": {
+          "overallPercentage": { "type": "number" },
+          "weeklyChange": { "type": "number" },
+          "dimensions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string", "enum": ["Exhaustion", "Cynicism", "Efficacy"] },
+                "percentage": { "type": "number" },
+                "weeklyChange": { "type": "number" }
+              }
+            }
+          }
+        }
+      },
+      "WeeklyGoal": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "current": { "type": "integer" },
+          "target": { "type": "integer" },
+          "completed": { "type": "boolean" }
+        }
+      },
+      "Achievement": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "icon": { "type": "string" },
+          "unlocked": { "type": "boolean" },
+          "unlockedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "progress": {
+            "type": "object",
+            "properties": {
+              "current": { "type": "integer" },
+              "target": { "type": "integer" }
+            }
+          }
+        }
+      },
+      "Encouragement": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" },
+          "nearestAchievement": { "type": "string", "nullable": true },
+          "suggestedAction": { "type": "string" },
+          "allUnlocked": { "type": "boolean" }
+        }
+      },
+      "CrisisHub": {
+        "type": "object",
+        "properties": {
+          "awarenessCard": {
+            "type": "object",
+            "properties": {
+              "headline": { "type": "string" },
+              "supportMessage": { "type": "string" },
+              "emergencyNumber": { "type": "string" }
+            }
+          },
+          "pathways": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "enum": ["coping_strategies", "talk_to_someone", "safety_plan"] },
+                "label": { "type": "string" },
+                "description": { "type": "string" },
+                "icon": { "type": "string" }
+              }
+            }
+          },
+          "crisisLineAction": {
+            "type": "object",
+            "properties": {
+              "label": { "type": "string" },
+              "phoneNumber": { "type": "string" },
+              "available24x7": { "type": "boolean" }
+            }
+          }
+        }
+      },
+      "CopingStrategy": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "type": { "type": "string", "enum": ["breathing", "grounding", "muscle_relaxation"] },
+          "description": { "type": "string" },
+          "durationMinutes": { "type": "integer" },
+          "instructions": { "type": "string" },
+          "config": {
+            "type": "object",
+            "description": "Exercise-specific configuration",
+            "properties": {
+              "phases": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "label": { "type": "string" },
+                    "durationSeconds": { "type": "integer" }
+                  }
+                }
+              },
+              "cycles": { "type": "integer" },
+              "sensoryPrompts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "sense": { "type": "string" },
+                    "count": { "type": "integer" },
+                    "prompt": { "type": "string" },
+                    "icon": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "EmergencyResources": {
+        "type": "object",
+        "properties": {
+          "hotlines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "phoneNumber": { "type": "string" },
+                "textNumber": { "type": "string", "nullable": true },
+                "textKeyword": { "type": "string", "nullable": true },
+                "available24x7": { "type": "boolean" },
+                "actionType": { "type": "string", "enum": ["call", "text", "both"] }
+              }
+            }
+          },
+          "therapist": { "$ref": "#/components/schemas/Therapist" },
+          "trustedContacts": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TrustedContact" }
+          }
+        }
+      },
+      "TrustedContact": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "phone": { "type": "string" },
+          "relationship": { "type": "string" },
+          "avatarInitial": { "type": "string" }
+        }
+      },
+      "TrustedContactCreate": {
+        "type": "object",
+        "required": ["name", "phone"],
+        "properties": {
+          "name": { "type": "string" },
+          "phone": { "type": "string" },
+          "relationship": { "type": "string" }
+        }
+      },
+      "SafetyPlan": {
+        "type": "object",
+        "properties": {
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "stepNumber": { "type": "integer", "minimum": 1, "maximum": 6 },
+                "title": { "type": "string" },
+                "items": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          },
+          "reasonForLiving": { "type": "string" },
+          "lastUpdated": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SafetyPlanUpdate": {
+        "type": "object",
+        "properties": {
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "stepNumber": { "type": "integer", "minimum": 1, "maximum": 6 },
+                "items": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          },
+          "reasonForLiving": { "type": "string" }
+        }
+      },
+      "CrisisDetectionResult": {
+        "type": "object",
+        "properties": {
+          "riskLevel": { "type": "string", "enum": ["none", "low", "medium", "high", "critical"] },
+          "keywordsDetected": { "type": "array", "items": { "type": "string" } },
+          "recommendedAction": { "type": "string", "enum": ["none", "show_resources", "show_crisis_hub", "immediate_intervention"] },
+          "message": { "type": "string", "nullable": true }
+        }
+      },
+      "MediaUploadResponse": {
+        "type": "object",
+        "properties": {
+          "mediaId": { "type": "string", "format": "uuid" },
+          "type": { "type": "string", "enum": ["audio", "video"] },
+          "status": { "type": "string", "enum": ["uploaded", "processing", "analyzed"] },
+          "transcript": { "type": "string", "nullable": true },
+          "uploadedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "AudioAnalysis": {
+        "type": "object",
+        "properties": {
+          "mediaId": { "type": "string", "format": "uuid" },
+          "transcript": { "type": "string" },
+          "emotionalIndicators": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "indicator": { "type": "string", "enum": ["stress", "anxiety", "calmness", "sadness", "anger", "neutral"] },
+                "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            }
+          },
+          "vocalMetrics": {
+            "type": "object",
+            "properties": {
+              "averagePace": { "type": "string", "enum": ["slow", "normal", "fast"] },
+              "pitchVariation": { "type": "string", "enum": ["monotone", "normal", "high_variation"] },
+              "toneCategory": { "type": "string" }
+            }
+          },
+          "analyzedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "VideoAnalysis": {
+        "type": "object",
+        "properties": {
+          "mediaId": { "type": "string", "format": "uuid" },
+          "detectedEmotions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "emotion": { "type": "string" },
+                "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+                "timestampMs": { "type": "integer" }
+              }
+            }
+          },
+          "dominantEmotion": { "type": "string" },
+          "analyzedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "UserProfile": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string", "format": "email" },
+          "name": { "type": "string" },
+          "onboardingComplete": { "type": "boolean" },
+          "onboardingPath": { "type": "string", "enum": ["self", "therapist_referred"], "nullable": true },
+          "goals": { "type": "array", "items": { "type": "string" } },
+          "preferredSessionTime": { "type": "string", "nullable": true },
+          "severityLevel": { "type": "string", "enum": ["mild", "moderate", "significant"], "nullable": true },
+          "streakDays": { "type": "integer" },
+          "sessionsCompleted": { "type": "integer" },
+          "diaryEntriesCount": { "type": "integer" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "UserProfileUpdate": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "goals": { "type": "array", "items": { "type": "string" } },
+          "preferredSessionTime": { "type": "string", "enum": ["morning", "afternoon", "evening"] }
+        }
+      },
+      "Therapist": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "specialty": { "type": "string" },
+          "phoneNumber": { "type": "string" },
+          "lastSessionDate": { "type": "string", "format": "date", "nullable": true }
+        }
+      },
+      "ProgressReport": {
+        "type": "object",
+        "properties": {
+          "reportId": { "type": "string", "format": "uuid" },
+          "generatedAt": { "type": "string", "format": "date-time" },
+          "dateRange": {
+            "type": "object",
+            "properties": {
+              "from": { "type": "string", "format": "date" },
+              "to": { "type": "string", "format": "date" }
+            }
+          },
+          "burnoutScoreTrend": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": { "type": "string", "format": "date" },
+                "score": { "type": "number" }
+              }
+            }
+          },
+          "sessionsCompleted": { "type": "integer" },
+          "totalSessionMinutes": { "type": "integer" },
+          "diaryEntriesCount": { "type": "integer" },
+          "topDistortions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "frequency": { "type": "integer" }
+              }
+            }
+          },
+          "moodTrend": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": { "type": "string", "format": "date" },
+                "averageMood": { "type": "number" }
+              }
+            }
+          },
+          "clinicalNotes": { "type": "string" }
+        }
+      },
+      "PatientSummary": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "severityLevel": { "type": "string" },
+          "burnoutRecoveryPercentage": { "type": "number" },
+          "sessionsCompleted": { "type": "integer" },
+          "lastActiveAt": { "type": "string", "format": "date-time" },
+          "riskIndicator": { "type": "string", "enum": ["low", "moderate", "high"] },
+          "streakDays": { "type": "integer" }
+        }
+      },
+      "AuditLogEntry": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "userId": { "type": "string", "format": "uuid" },
+          "actionType": { "type": "string", "enum": ["login", "data_read", "data_write", "data_export", "data_delete", "crisis_access"] },
+          "resource": { "type": "string" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "ipAddress": { "type": "string" },
+          "userAgent": { "type": "string" },
+          "metadata": { "type": "object", "additionalProperties": true }
+        }
+      }
+    }
+  }
+}

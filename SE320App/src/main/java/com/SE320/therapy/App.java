@@ -14,7 +14,7 @@ public class App {
     }
 
     @Bean
-    @ConditionalOnProperty(name = "app.cli.enabled", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnProperty(name = "app.cli.enabled", havingValue = "true", matchIfMissing = false)
     CommandLineRunner runCli(Menu menu) {
         return args -> menu.execute();
     }
