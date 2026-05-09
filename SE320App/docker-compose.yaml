@@ -1,0 +1,61 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: se320app-backend:local
+    command: ["java", "-jar", "/app/app.jar"]
+    environment:
+      H2_URL: "jdbc:h2:file:/app/data/h2/digitaltherapy_db;DB_CLOSE_DELAY=-1"
+      H2_USER: "${H2_USER:-sa}"
+      H2_PASSWORD: "${H2_PASSWORD:-}"
+      VECTOR_STORE_PATH: "/app/data/vector/vector-store.json"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      OPENAI_BASE_URL: "${OPENAI_BASE_URL:-https://api.openai.com/v1}"
+      OPENAI_CHAT_MODEL: "${OPENAI_CHAT_MODEL:-gpt-4o-mini}"
+      JWT_SECRET: "${JWT_SECRET:-change-me-to-a-long-random-secret-for-local-compose}"
+      JWT_EXPIRATION: "${JWT_EXPIRATION:-3600000}"
+      JWT_REFRESH_EXPIRATION: "${JWT_REFRESH_EXPIRATION:-86400000}"
+      MCP_ENABLED: "${MCP_ENABLED:-false}"
+      MCP_STDIO: "${MCP_STDIO:-false}"
+    volumes:
+      - h2-data:/app/data/h2
+      - vector-store:/app/data/vector
+      - ./src/main/resources/application.properties:/app/config/application.properties:ro
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/v3/api-docs || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks:
+      - se320-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: se320app-frontend:local
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:3000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
+    networks:
+      - se320-net
+
+networks:
+  se320-net:
+    driver: bridge
+
+volumes:
+  h2-data:
+  vector-store:
