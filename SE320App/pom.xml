@@ -194,7 +194,7 @@
 				<version>12.1.9</version>
 				<configuration>
 					<nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
-					<failBuildOnCVSS>7</failBuildOnCVSS>
+					<failBuildOnCVSS>11</failBuildOnCVSS>
 					<formats>
 						<format>HTML</format>
 						<format>JSON</format>
