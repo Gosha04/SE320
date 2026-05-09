@@ -193,6 +193,7 @@
 				<artifactId>dependency-check-maven</artifactId>
 				<version>12.1.9</version>
 				<configuration>
+					<nvdApiKey>${env.NVD_API_KEY}</nvdApiKey>
 					<failBuildOnCVSS>7</failBuildOnCVSS>
 					<formats>
 						<format>HTML</format>
