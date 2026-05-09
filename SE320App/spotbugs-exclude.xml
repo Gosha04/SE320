@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <Match>
+        <Class name="com.SE320.therapy.config.CliConfig"/>
+        <Bug pattern="DM_DEFAULT_ENCODING"/>
+    </Match>
+    <Match>
+        <Class name="com.SE320.therapy.controller.UserController"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH"/>
+    </Match>
+</FindBugsFilter>
