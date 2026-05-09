@@ -1,6 +1,7 @@
 package com.SE320.therapy.controller;
 
 import com.SE320.therapy.dto.ApiErrorEnvelope;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -131,10 +132,11 @@ public class UserController {
             req == null ? null : req.userId(),
             req == null ? null : req.email()
         );
+        DeleteRequest deleteRequest = Objects.requireNonNull(req, "Delete request is required");
         User deleted = authentication.deleteUser(
-            req.userId(),
-            req.email(),
-            req.password()
+            deleteRequest.userId(),
+            deleteRequest.email(),
+            deleteRequest.password()
         );
 
         return new UserResponse(
