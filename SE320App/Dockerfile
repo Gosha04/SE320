@@ -1,4 +1,4 @@
-FROM maven:3.9-eclipse-temurin-22 AS build
+FROM maven:3.9-eclipse-temurin-17 AS build
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ RUN mvn -B clean package \
     && JAR_FILE="$(mvn -q -DforceStdout help:evaluate -Dexpression=project.build.finalName)" \
     && cp "target/${JAR_FILE}-exec.jar" target/app.jar
 
-FROM eclipse-temurin:22-jre-alpine AS runtime
+FROM eclipse-temurin:17-jre-alpine AS runtime
 
 WORKDIR /app
 
