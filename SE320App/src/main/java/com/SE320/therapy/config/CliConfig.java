@@ -1,5 +1,6 @@
 package com.SE320.therapy.config;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -14,7 +15,7 @@ public class CliConfig {
 
     @Bean
     Scanner scanner() {
-        return new Scanner(System.in);
+        return new Scanner(System.in, StandardCharsets.UTF_8);
     }
 
     @Bean

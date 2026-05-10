@@ -1,5 +1,9 @@
 # SE320 Digital Therapy Assistant
 
+[![Continuous Integration](https://github.com/Gosha04/SE320/actions/workflows/ci.yml/badge.svg)](https://github.com/Gosha04/SE320/actions/workflows/ci.yml)
+[![Continuous Delivery](https://github.com/Gosha04/SE320/actions/workflows/cd-build.yml/badge.svg)](https://github.com/Gosha04/SE320/actions/workflows/cd-build.yml)
+[![Continuous Deployment](https://github.com/Gosha04/SE320/actions/workflows/cd-deploy.yml/badge.svg)](https://github.com/Gosha04/SE320/actions/workflows/cd-deploy.yml)
+
 A Spring Boot application for CBT-focused digital therapy workflows, including authentication, guided session chat, diary entries, progress tracking, and crisis support.
 
 ## Architecture Overview
@@ -197,6 +201,65 @@ mvn verify
 ```
 
 JaCoCo report is generated under `SE320App/target/site/jacoco/`.
+
+## CI/CD/CD Pipeline
+
+The GitHub Actions pipeline uses a stage-gate architecture. Every stage must pass before downstream delivery or deployment work can run.
+
+```text
+Developer push or PR
+        |
+        v
+Stage 1: Build
+        |
+        +---- Stage 2: Unit Tests + JaCoCo 80% coverage gate
+        +---- Stage 3: Integration Tests
+        +---- Stage 4: Code Quality (Checkstyle, SpotBugs, ESLint)
+        +---- Stage 5: Dependency Check (OWASP Dependency-Check)
+        +---- Stage 6: Security Scan (Gitleaks)
+        |
+        v
+Stage 7: Package Docker Images and Push to GHCR
+        |
+        v
+Stage 8: Smoke Test Full Stack
+        |
+        v
+Stage 9: Deploy to EC2 and Verify
+```
+
+### Workflow Files
+
+- `.github/workflows/ci.yml`: runs on pushes and pull requests to `main` and `develop`. It builds the Java backend and Next.js frontend, then fans out into unit tests, integration tests, code quality, dependency checking, and secret scanning.
+- `.github/workflows/cd-build.yml`: runs after merges to `main`. It builds backend and frontend Docker images, tags them with the commit SHA and `latest`, pushes them to GitHub Container Registry, then starts the Docker Compose stack for smoke testing.
+- `.github/workflows/cd-deploy.yml`: runs after successful Continuous Delivery or manually through `workflow_dispatch`. It deploys the Docker Compose stack to the production EC2 instance over SSH and verifies the backend OpenAPI endpoint and frontend homepage.
+
+### Quality Gates
+
+- Build: `mvn -B -DskipTests package`, `npm ci`, and `npm run build`.
+- Unit tests and coverage: `mvn -B verify` with a JaCoCo instruction coverage minimum of 80%.
+- Integration tests: Spring Boot API and integration tests matching `*IntegrationTest` and `*ApiTest`.
+- Code quality: Maven Checkstyle, SpotBugs, and frontend ESLint.
+- Dependency check: OWASP Dependency-Check fails the build for CVSS 7+ vulnerabilities.
+- Security scan: Gitleaks scans the repository history for committed secrets.
+- Smoke test: Docker Compose starts the backend on port `8080` and frontend on port `3000`; the workflow verifies `http://localhost:8080/v3/api-docs` and `http://localhost:3000/`.
+
+### Secrets and Environments
+
+Credentials are stored in GitHub Secrets and are never committed to the repository. Deployment uses the protected `production` environment so manual approvals or branch protections can be configured in GitHub.
+
+Required deployment secrets:
+
+- `EC2_HOST`: EC2 public DNS name or Elastic IP.
+- `EC2_USER`: SSH username for the EC2 instance.
+- `EC2_SSH_KEY`: private SSH key with access to the instance.
+- `JWT_SECRET`: production JWT signing secret.
+- `OPENAI_API_KEY`: optional production OpenAI API key.
+
+Docker images are published to GitHub Container Registry as:
+
+- `ghcr.io/<owner>/<repository>-backend:<sha>`
+- `ghcr.io/<owner>/<repository>-frontend:<sha>`
 
 ## MCP Server
 
