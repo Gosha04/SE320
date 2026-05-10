@@ -8,7 +8,7 @@ RUN mvn -B dependency:go-offline
 COPY src ./src
 RUN mvn -B clean package \
     && JAR_FILE="$(mvn -q -DforceStdout help:evaluate -Dexpression=project.build.finalName)" \
-    && cp "target/${JAR_FILE}.jar" target/app.jar
+    && cp "target/${JAR_FILE}-exec.jar" target/app.jar
 
 FROM eclipse-temurin:22-jre-alpine AS runtime
 
