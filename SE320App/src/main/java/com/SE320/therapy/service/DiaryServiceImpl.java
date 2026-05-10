@@ -1,6 +1,12 @@
 package com.SE320.therapy.service;
 
-import com.SE320.therapy.dto.*;
+import com.SE320.therapy.dto.ApiErrorDetail;
+import com.SE320.therapy.dto.DiaryEntryCreateRequest;
+import com.SE320.therapy.dto.DiaryEntryDetail;
+import com.SE320.therapy.dto.DiaryEntryResponse;
+import com.SE320.therapy.dto.DiaryEntrySummary;
+import com.SE320.therapy.dto.DiaryInsights;
+import com.SE320.therapy.dto.DistortionSuggestion;
 import com.SE320.therapy.entity.DiaryEntry;
 import com.SE320.therapy.entity.User;
 import com.SE320.therapy.exception.ApiException;

@@ -2,6 +2,7 @@
 const isStaticExport = process.env.NEXT_OUTPUT === 'export'
 
 const nextConfig = {
+  ...(process.env.NEXT_DIST_DIR ? { distDir: process.env.NEXT_DIST_DIR } : {}),
   ...(isStaticExport ? { output: 'export' } : {}),
   typescript: {
     ignoreBuildErrors: true,

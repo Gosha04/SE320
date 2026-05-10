@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: se320app-backend:local
+    image: ${BACKEND_IMAGE:-se320app-backend:local}
     command: ["java", "-jar", "/app/app.jar"]
     environment:
       H2_URL: "jdbc:h2:file:/app/data/h2/digitaltherapy_db;DB_CLOSE_DELAY=-1"
@@ -37,7 +37,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    image: se320app-frontend:local
+    image: ${FRONTEND_IMAGE:-se320app-frontend:local}
     depends_on:
       backend:
         condition: service_healthy
