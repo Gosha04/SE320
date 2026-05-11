@@ -12,9 +12,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.YearMonth;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -174,11 +177,11 @@ class ServiceTests {
     void getWeeklyProgressBuildsWeekPointsAndStreak() {
         UUID userId = UUID.randomUUID();
         User user = user(userId);
-        LocalDateTime today = LocalDateTime.now();
+        LocalDate weekStartDate = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
 
-        DiaryEntry todayEntry = diaryEntry(user, 2, 6, today);
-        DiaryEntry previousDayEntry = diaryEntry(user, 3, 7, today.minusDays(1));
-        DiaryEntry oldEntry = diaryEntry(user, 4, 5, today.minusDays(10));
+        DiaryEntry todayEntry = diaryEntry(user, 2, 6, weekStartDate.atTime(9, 0));
+        DiaryEntry previousDayEntry = diaryEntry(user, 3, 7, weekStartDate.plusDays(1).atTime(9, 0));
+        DiaryEntry oldEntry = diaryEntry(user, 4, 5, weekStartDate.minusDays(3).atTime(9, 0));
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(diaryEntryRepository.findByUser_IdAndDeletedFalse(userId))
