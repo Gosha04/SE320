@@ -35,7 +35,5 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD wget -q -O /dev/null http://localhost:8080/v3/api-docs || exit 1
 
 COPY --from=build --chown=app:app /app/target/app.jar ./app.jar
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-ENTRYPOINT ["docker-entrypoint.sh"]
+USER app
