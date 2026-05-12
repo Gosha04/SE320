@@ -10,11 +10,15 @@ RUN mvn -B clean package \
     && JAR_FILE="$(mvn -q -DforceStdout help:evaluate -Dexpression=project.build.finalName)" \
     && cp "target/${JAR_FILE}-exec.jar" target/app.jar
 
-FROM eclipse-temurin:17-jre-alpine AS runtime
+FROM eclipse-temurin:17-jre-noble AS runtime
 
 WORKDIR /app
 
-RUN addgroup -S app && adduser -S app -G app \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends wget \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd --system app \
+    && useradd --system --gid app --home-dir /app --shell /usr/sbin/nologin app \
     && mkdir -p /app/data/h2 /app/data/vector \
     && chown -R app:app /app/data
 
@@ -31,5 +35,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD wget -q -O /dev/null http://localhost:8080/v3/api-docs || exit 1
 
 COPY --from=build --chown=app:app /app/target/app.jar ./app.jar
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-USER app
+ENTRYPOINT ["docker-entrypoint.sh"]
