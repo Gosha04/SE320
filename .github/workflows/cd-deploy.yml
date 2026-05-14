@@ -55,8 +55,8 @@ jobs:
       
             cd /home/${{ secrets.EC2_USER }}/SE320App
       
-            sudo -E docker compose pull
-            sudo -E docker compose up -d 
+            docker compose pull
+            docker compose up -d 
           '
       - name: Post-deployment verification
         run: |
