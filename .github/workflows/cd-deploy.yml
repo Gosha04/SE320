@@ -48,8 +48,8 @@ jobs:
             export FRONTEND_IMAGE='${FRONTEND_IMAGE}' && \
             export JWT_SECRET='${{ secrets.JWT_SECRET }}' && \
             export OPENAI_API_KEY='${{ secrets.OPENAI_API_KEY }}' && \
-            docker compose -f /home/${{ secrets.EC2_USER }}/docker-compose.yaml pull && \
-            docker compose -f /home/${{ secrets.EC2_USER }}/docker-compose.yaml up -d"
+            sudo docker compose -f /home/${{ secrets.EC2_USER }}/docker-compose.yaml pull && \
+            sudo docker compose -f /home/${{ secrets.EC2_USER }}/docker-compose.yaml up -d"
       - name: Post-deployment verification
         run: |
           curl -fsS "http://${{ secrets.EC2_HOST }}:8080/v3/api-docs"
