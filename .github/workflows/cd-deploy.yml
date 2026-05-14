@@ -16,7 +16,7 @@ permissions:
   packages: read
 
 env:
-  REGISTRY: ghcr.io
+  REGISTRY: docker.io
   IMAGE_TAG: ${{ github.event.inputs.image_tag || 'latest' }}
 
 jobs:
