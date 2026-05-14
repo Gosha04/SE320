@@ -1,0 +1,85 @@
+@startuml c4-pipeline
+title Digital Therapy Assistant - CI/CD/CD Pipeline Stage-Gate Diagram
+
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam packageStyle rectangle
+skinparam wrapWidth 230
+skinparam maxMessageSize 240
+skinparam activity {
+  BorderColor #2F4858
+  BackgroundColor #EBF5FB
+  DiamondBackgroundColor #FCF3CF
+  DiamondBorderColor #2F4858
+  StartColor #2F4858
+  EndColor #2F4858
+}
+skinparam note {
+  BorderColor #2F4858
+  BackgroundColor #FEF9E7
+}
+
+start
+
+:Trigger: push or pull request\nto main/develop;
+:CI Workflow\nStage 1 - Build backend and frontend;
+
+if (Build passed?) then (yes)
+  fork
+    :Stage 2 - Unit Tests and Coverage\nmvn verify + JaCoCo gate;
+  fork again
+    :Stage 3 - Integration Tests\nSpring Boot integration/API tests;
+  fork again
+    :Stage 4 - Code Quality\nCheckstyle, SpotBugs, ESLint;
+  fork again
+    :Stage 5 - Dependency Check\nOWASP Dependency-Check;
+  fork again
+    :Stage 6 - Security Scan\nGitleaks secret scan;
+  end fork
+else (no)
+  stop
+endif
+
+if (All parallel CI gates passed?) then (yes)
+  :Main branch delivery gate;
+else (no)
+  stop
+endif
+
+if (Trigger is push to main?) then (yes)
+  :CD Build Workflow\nStage 7 - Build Docker Images\nbackend and frontend;
+  :Push Images to GitHub Container Registry\nTags: github SHA and latest;
+  :Stage 8 - Smoke Test\nPull images, docker compose up,\nverify /v3/api-docs and frontend /;
+
+  if (Smoke test passed?) then (yes)
+    :CD Deploy Workflow Trigger\nworkflow_run success or manual dispatch;
+    :Production environment gate\nGitHub environment and secrets available;
+    :Stage 9 - Deploy to EC2\nSSH, upload compose file,\npull images, docker compose up -d;
+    :Post-Deployment Verification\ncurl EC2:8080/v3/api-docs\nand EC2:3000/;
+
+    if (Verification passed?) then (yes)
+      :Production release complete;
+      stop
+    else (no)
+      :Deployment failed\ninspect workflow logs and EC2 containers;
+      stop
+    endif
+  else (no)
+    :Delivery failed\nimages are not promoted to deployment;
+    stop
+  endif
+else (pull request/develop)
+  :CI result reported to branch or PR;
+  stop
+endif
+
+legend right
+|= Notation |= Meaning |
+| Rounded activity | Pipeline stage or job |
+| Diamond | Stage gate / promotion decision |
+| Fork block | Parallel jobs after the build gate |
+| Stop node | Failed gate or completed non-production path |
+endlegend
+
+@enduml
