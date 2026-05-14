@@ -35,8 +35,8 @@ jobs:
           ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
       - name: Resolve image names
         run: |
-          echo "BACKEND_IMAGE=ghcr.io/gosha004/se320app-backend" >> "$GITHUB_ENV"
-          echo "FRONTEND_IMAGE=ghcr.io/gosha004/se320app-frontend" >> "$GITHUB_ENV"
+          echo "BACKEND_IMAGE=gosha004/se320app-backend" >> "$GITHUB_ENV"
+          echo "FRONTEND_IMAGE=gosha004/se320app-frontend" >> "$GITHUB_ENV"
       - name: Upload Docker Compose file
         run: |
           ssh -i ~/.ssh/ec2_key "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" "mkdir -p /home/${{ secrets.EC2_USER }}/SE320App"
