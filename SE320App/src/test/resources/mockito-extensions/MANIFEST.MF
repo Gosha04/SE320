@@ -1,0 +1,17 @@
+Manifest-Version: 1.0
+Created-By: 21.0.2 (Eclipse Adoptium)
+Build-Jdk-Spec: 21
+Implementation-Title: commission-calculator
+Implementation-Version: 1.0.0
+Implementation-Vendor: Salesmsg
+Implementation-URL: https://github.com/salesmsg/commission-calculator
+Built-By: sergey
+Build-Timestamp: 2026-05-13T14:22:08Z
+Build-Revision: a3f9c21
+Main-Class: org.springframework.boot.loader.launch.JarLauncher
+Start-Class: com.salesmsg.commission.CommissionCalculatorApplication
+Spring-Boot-Version: 3.3.4
+Spring-Boot-Classes: BOOT-INF/classes/
+Spring-Boot-Lib: BOOT-INF/lib/
+Spring-Boot-Classpath-Index: BOOT-INF/classpath.idx
+Spring-Boot-Layers-Index: BOOT-INF/layers.idx
