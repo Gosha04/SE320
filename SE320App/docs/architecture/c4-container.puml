@@ -5,49 +5,67 @@ skinparam shadowing false
 skinparam backgroundColor white
 skinparam defaultFontName Arial
 skinparam packageStyle rectangle
-skinparam wrapWidth 220
-skinparam maxMessageSize 220
+skinparam wrapWidth 230
+skinparam maxMessageSize 240
 skinparam rectangle {
   RoundCorner 12
   BorderColor #2F4858
 }
-
-rectangle "Patients / Therapists / Administrators\n<<Users>>" as users #F6D55C
-
-rectangle "Digital Therapy Assistant" as boundary #EBF5FB {
-  rectangle "CLI Application (Java)\n<<Container>>\n`com.SE320.therapy.cli.commands`\nInteractive menu-driven interface running\ninside the Spring Boot process" as cli #AED6F1
-
-  rectangle "Spring Boot Application\n<<Container>>\nREST controllers, services, security,\nrepositories, DTOs, and orchestration logic" as app #5DADE2
-
-  database "H2 Database\n<<Container>>\nRelational persistence for users, sessions,\nchat messages, diary entries, achievements,\nand safety plans" as db #A9DFBF
-
-  rectangle "SimpleVector Store\n<<Container>>\nJSON-backed vector store at `data/vector-store.json`\nfor similarity search used by RAG" as vector #A9DFBF
-
-  folder "Knowledge Base\n<<Container>>\nJSON CBT reference documents in\n`src/main/resources/knowledge-base/`" as kb #FCF3CF
+skinparam database {
+  BorderColor #2F4858
+}
+skinparam folder {
+  BorderColor #2F4858
 }
 
-rectangle "LLM Provider\n<<External System>>\nOpenAI-compatible API" as llm #D6EAF8
+rectangle "Patients / Therapists / Administrators\n<<Users>>" as users #F6D55C
+rectangle "AI Client\n<<Claude Desktop / Claude Code>>" as ai_client #F6D55C
+
+rectangle "Digital Therapy Assistant - Docker Compose Runtime" as boundary #EBF5FB {
+  rectangle "Frontend Container\n<<Nginx + React static assets>>\nHost port 3000 -> container port 3000\nServes SPA and reverse proxies API routes" as frontend #AED6F1
+
+  rectangle "Spring Boot Backend Container\n<<Java 22 / Spring Boot>>\nHost port 8080 -> container port 8080\nREST controllers, services, security,\nrepositories, DTOs, and orchestration logic" as backend #5DADE2
+
+  rectangle "MCP Server\n<<stdio mode inside Spring Boot app>>\nEnabled with MCP_ENABLED and MCP_STDIO\nExposes assistant tools through the backend process" as mcp #85C1E9
+
+  database "H2 Database Volume\n<<Docker volume: h2-data>>\nMounted at /app/data/h2\nFile URL: jdbc:h2:file:/app/data/h2/digitaltherapy_db" as db #A9DFBF
+
+  database "SimpleVector Store Volume\n<<Docker volume: vector-store>>\nMounted at /app/data/vector\nJSON vector store: vector-store.json" as vector #A9DFBF
+
+  folder "Knowledge Base\n<<Bundled application resources>>\nCBT reference documents in\nsrc/main/resources/knowledge-base/" as kb #FCF3CF
+}
+
+rectangle "GitHub Container Registry\n<<Docker image storage>>\nfrontend:latest/backend:latest and SHA tags" as ghcr #D6EAF8
+rectangle "Anthropic API\n<<External Service>>" as anthropic #D6EAF8
+rectangle "LLM Provider\n<<OpenAI-compatible API>>" as llm #D6EAF8
 rectangle "Email Service\n<<External System>>" as email #D6EAF8
 rectangle "Healthcare EHR Systems\n<<External System>>" as ehr #D6EAF8
 
-users --> cli : Uses menu commands
-users --> app : Uses REST API endpoints
-cli --> app : Invokes controllers and services in-process
-app --> db : Reads and writes application data
-app --> vector : Queries and persists vector embeddings
-app --> kb : Loads CBT content and crisis guidance
-app --> llm : Sends prompt requests and receives AI completions
-app --> email : Sends notifications
-app --> ehr : Exports treatment data via FHIR
+users --> frontend : HTTPS/HTTP browser traffic\nhttp://host:3000
+users --> backend : Direct API access when allowed\nhttp://host:8080
+frontend --> backend : Nginx reverse proxy\n/auth, /sessions, /diary,\n/progress, /crisis -> backend:8080
+ai_client --> mcp : MCP stdio session
+mcp --> backend : Invokes therapy services,\nRAG, crisis, and workflow logic\nin-process
+ai_client --> anthropic : Model requests from Claude clients
+
+backend --> db : Reads/writes users, sessions,\nchat, diary, achievements,\nand safety plans
+backend --> vector : Persists and queries embeddings
+backend --> kb : Loads CBT content and crisis guidance
+backend --> llm : Sends prompts and receives completions
+backend --> email : Sends notifications
+backend --> ehr : Exports treatment data via FHIR
 vector --> kb : Stores embeddings derived from\nknowledge base documents
+ghcr --> frontend : Pulls frontend image
+ghcr --> backend : Pulls backend image
 
 legend right
 |= Notation |= Meaning |
-| <back:#AED6F1>Application Container</back> | Executable or deployable application unit |
-| <back:#5DADE2>Main Application</back> | Primary backend runtime |
-| <back:#A9DFBF>Data Store</back> | Persistent storage container |
-| <back:#FCF3CF>Knowledge Source</back> | Reference content used for RAG |
-| <back:#D6EAF8>External System</back> | Third-party or external dependency |
+| <back:#F6D55C>User / Client</back> | Human user or AI client |
+| <back:#AED6F1>Frontend Container</back> | Nginx-hosted React application on port 3000 |
+| <back:#5DADE2>Backend Container</back> | Spring Boot application on port 8080 |
+| <back:#85C1E9>MCP Runtime</back> | stdio MCP server embedded in backend process |
+| <back:#A9DFBF>Persistent Volume</back> | Docker volume-backed file persistence |
+| <back:#D6EAF8>External System</back> | Third-party service or registry |
 endlegend
 
 @enduml

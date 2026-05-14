@@ -1,0 +1,87 @@
+@startuml c4-deployment
+title Digital Therapy Assistant - Deployment Diagram
+
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam packageStyle rectangle
+skinparam wrapWidth 230
+skinparam maxMessageSize 240
+skinparam rectangle {
+  RoundCorner 12
+  BorderColor #2F4858
+}
+skinparam node {
+  RoundCorner 12
+  BorderColor #2F4858
+}
+skinparam database {
+  BorderColor #2F4858
+}
+skinparam folder {
+  BorderColor #2F4858
+}
+skinparam cloud {
+  BorderColor #2F4858
+}
+
+rectangle "Developer / Maintainer\n<<Actor>>" as dev #F6D55C
+rectangle "AI Client\n<<Claude Desktop / Claude Code>>" as ai_client #F6D55C
+cloud "GitHub\n<<Source + Actions>>\nCI/CD/CD workflows, repository,\nand deployment automation" as github #D6EAF8
+database "GitHub Container Registry\n<<GHCR>>\nbackend and frontend Docker images\nwith SHA and latest tags" as ghcr #D6EAF8
+cloud "Anthropic API\n<<External Service>>" as anthropic #D6EAF8
+cloud "LLM Provider\n<<OpenAI-compatible API>>" as llm #D6EAF8
+
+node "AWS Cloud" as aws #F8F9F9 {
+  node "EC2 Instance\n<<Ubuntu + Docker Engine>>\nElastic IP: stable public endpoint" as ec2 #D5F5E3 {
+    rectangle "Security Group\n<<Ingress Rules>>\n22/tcp SSH from maintainer/GitHub runner\n3000/tcp frontend public access\n8080/tcp backend API/verification access" as sg #FADBD8
+
+    rectangle "Docker Compose\n<<Orchestrator>>\nCreates se320-net bridge network,\nhealth checks, image pulls,\nand container lifecycle" as compose #FCF3CF
+
+    rectangle "Frontend Container\n<<Nginx>>\nHost 3000 -> container 3000\nServes React app and proxies API routes" as frontend #AED6F1
+
+    rectangle "Backend Container\n<<Spring Boot Java>>\nHost 8080 -> container 8080\nREST API plus MCP stdio runtime" as backend #5DADE2
+
+    rectangle "MCP Server\n<<stdio inside backend container>>\nAssistant tool endpoint exposed\nthrough backend process configuration" as mcp #85C1E9
+
+    database "h2-data Volume\n<<Persistent file volume>>\n/app/data/h2" as h2vol #A9DFBF
+    database "vector-store Volume\n<<Persistent file volume>>\n/app/data/vector" as vecvol #A9DFBF
+    folder "Config Mount\n<<Read-only bind mount>>\napplication.properties -> /app/config/application.properties" as config #E8DAEF
+    rectangle "Secrets / Environment\n<<GitHub Actions secrets exported on deploy>>\nJWT_SECRET, OPENAI_API_KEY,\nEC2_HOST, EC2_USER, EC2_SSH_KEY" as secrets #F9E79F
+    rectangle "Build Cache\n<<GitHub Actions and Docker layer cache>>\nMaven, npm, and Docker Buildx\ncaches speed repeatable delivery" as cache #FDEBD0
+  }
+}
+
+dev --> github : Pushes changes and reviews workflows
+ai_client --> mcp : Starts MCP stdio session\nwhen configured with backend runtime
+ai_client --> anthropic : Sends Claude model requests
+github --> ghcr : Builds and publishes images
+github --> ec2 : SSH deploy using EC2 secrets\nand production environment gate
+ghcr --> compose : docker compose pull
+compose --> frontend : Starts and health-checks
+compose --> backend : Starts and health-checks
+compose --> h2vol : Mounts persistent relational data
+compose --> vecvol : Mounts persistent vector data
+compose --> config : Mounts read-only configuration
+secrets --> backend : Runtime credentials and API keys
+cache ..> github : Speeds workflow builds
+sg --> frontend : Allows public UI traffic on 3000
+sg --> backend : Allows API and verification traffic on 8080
+sg --> ec2 : Allows SSH management on 22
+frontend --> backend : Docker bridge network reverse proxy\nbackend:8080
+backend --> mcp : Hosts stdio MCP runtime in-process
+backend --> h2vol : Reads and writes H2 files
+backend --> vecvol : Reads and writes vector-store.json
+backend --> llm : Therapeutic AI completions
+
+legend right
+|= Notation |= Meaning |
+| <back:#D5F5E3>EC2 Runtime</back> | Cloud host for Docker Compose deployment |
+| <back:#AED6F1>Frontend</back> | Nginx container on port 3000 |
+| <back:#5DADE2>Backend</back> | Spring Boot container on port 8080 |
+| <back:#A9DFBF>Persistent Volume</back> | Docker volume mounted into backend |
+| <back:#FADBD8>Network Control</back> | Security group ingress rules |
+| <back:#F9E79F>Secrets</back> | GitHub Actions secrets passed during deployment |
+endlegend
+
+@enduml
