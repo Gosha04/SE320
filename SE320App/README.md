@@ -10,7 +10,9 @@ The deployed project is available at:
 - Swagger UI: http://3.23.255.252:8080/swagger-ui/index.html
 
 ## Local Run Info 
-- docker compose up -d --build .
+- docker compose up -d --build
+- docker compose down
+- This is handled via github action because of API keys and stuff but one can do it manually if they wish
 
 ## Tech Stack
 

@@ -1,5 +1,6 @@
 services:
   backend:
+    platform: ${DOCKER_PLATFORM:-linux/amd64}
     build:
       context: .
       dockerfile: Dockerfile
@@ -34,6 +35,7 @@ services:
       - se320-net
 
   frontend:
+    platform: ${DOCKER_PLATFORM:-linux/amd64}
     build:
       context: ./frontend
       dockerfile: Dockerfile
